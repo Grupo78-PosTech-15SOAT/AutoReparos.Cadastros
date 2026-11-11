@@ -1,27 +1,27 @@
-# AutoReparos.App - Aplicação Principal (API, Frontend & Domínio)
+# AutoReparos.Cadastros - Aplicação Principal (API, Frontend & Domínio)
 
 > **Projeto:** AutoReparos - Sistema Integrado de Oficina Mecânica  
 > **Fase:** Fase 3 Tech Challenge (13SOAT / 15SOAT FIAP)  
 > **Componente:** Repositório 4/4 da Arquitetura Multi-Repo  
 > **Stack:** C# .NET 10, ASP.NET Core Minimal APIs, Entity Framework Core, PostgreSQL 16, Angular 19 (Signals & Standalone), OpenTelemetry, Docker.  
-> **Repositório Oficial:** [Grupo78-PosTech-15SOAT/AutoReparos.App](https://github.com/Grupo78-PosTech-15SOAT/AutoReparos.App)
+> **Repositório Oficial:** [Grupo78-PosTech-15SOAT/AutoReparos.Cadastros](https://github.com/Grupo78-PosTech-15SOAT/AutoReparos.Cadastros)
 
 ---
 
 ## 1. Visão Geral
 
-O **AutoReparos.App** é o repositório central contendo toda a lógica de negócio, APIs REST, persistência de dados e aplicação web de interface com o usuário da oficina mecânica:
+O **AutoReparos.Cadastros** é o repositório central contendo toda a lógica de negócio, APIs REST, persistência de dados e aplicação web de interface com o usuário da oficina mecânica:
 
 | Projeto | Camada / Descrição |
 |---|---|
-| `AutoReparos.Domain` | Entidades puras, Value Objects, Enums, regras de negócio e interfaces de repositório (DDD) |
-| `AutoReparos.Application` | Casos de uso, DTOs, orquestração de serviços de aplicação e validação |
-| `AutoReparos.Infra` | `AppDbContext` EF Core, repositórios PostgreSQL, Identity, geração de JWT e integrações |
-| `AutoReparos.API` | Endpoints Minimal APIs, Swagger, injeção de dependência e OpenTelemetry |
+| `AutoReparos.Cadastros.Domain` | Entidades puras, Value Objects, Enums, regras de negócio e interfaces de repositório (DDD) |
+| `AutoReparos.Cadastros.Application` | Casos de uso, DTOs, orquestração de serviços de aplicação e validação |
+| `AutoReparos.Cadastros.Infrastructure` | `AppDbContext` EF Core, repositórios PostgreSQL, Identity, geração de JWT e integrações |
+| `AutoReparos.Cadastros.Api` | Endpoints Minimal APIs, Swagger, injeção de dependência e OpenTelemetry |
 | `AutoReparos.Web` | Frontend moderno em Angular 19 com Standalone Components e Angular Signals |
-| `AutoReparos.Domain.Tests` | 113 testes unitários de regras de domínio (xUnit + FluentAssertions) |
-| `AutoReparos.Application.Tests` | 134 testes unitários de casos de uso e métricas (xUnit + NSubstitute + FluentAssertions) |
-| `AutoReparos.IntegrationTests` | 67 testes de integração ponta a ponta com **Testcontainers PostgreSQL** |
+| `AutoReparos.Cadastros.Domain.Tests` | 113 testes unitários de regras de domínio (xUnit + FluentAssertions) |
+| `AutoReparos.Cadastros.Application.Tests` | 134 testes unitários de casos de uso e métricas (xUnit + NSubstitute + FluentAssertions) |
+| `AutoReparos.Cadastros.IntegrationTests` | 67 testes de integração ponta a ponta com **Testcontainers PostgreSQL** |
 
 ---
 
@@ -30,24 +30,24 @@ O **AutoReparos.App** é o repositório central contendo toda a lógica de negó
 A aplicação segue rigorosamente os princípios de **Clean Architecture** e **Vertical Slice**:
 
 ```
-AutoReparos.App/
-├── AutoReparos.Domain/             # Núcleo de regras de negócio sem dependências externas
-├── AutoReparos.Application/        # Orquestração de Use Cases e DTOs
-├── AutoReparos.Infra/              # Entity Framework Core, PostgreSQL e Identity
-├── AutoReparos.API/                # Minimal APIs, middlewares e Dockerfile
+AutoReparos.Cadastros/
+├── AutoReparos.Cadastros.Domain/             # Núcleo de regras de negócio sem dependências externas
+├── AutoReparos.Cadastros.Application/        # Orquestração de Use Cases e DTOs
+├── AutoReparos.Cadastros.Infrastructure/              # Entity Framework Core, PostgreSQL e Identity
+├── AutoReparos.Cadastros.Api/                # Minimal APIs, middlewares e Dockerfile
 │   └── Dockerfile                  # Multi-stage build .NET 10 SDK & ASP.NET Runtime
 ├── AutoReparos.Web/                # Frontend Angular 19 (Signals & Standalone)
 │   ├── Dockerfile                  # Multi-stage build Node.js 22 + Nginx unprivileged
 │   └── nginx.conf                  # Configuração SPA na porta 8080
-├── AutoReparos.Domain.Tests/       # Suíte de testes unitários do Domínio
-├── AutoReparos.Application.Tests/  # Suíte de testes unitários da Aplicação
-├── AutoReparos.IntegrationTests/   # Testes de integração com Testcontainers
+├── AutoReparos.Cadastros.Domain.Tests/       # Suíte de testes unitários do Domínio
+├── AutoReparos.Cadastros.Application.Tests/  # Suíte de testes unitários da Aplicação
+├── AutoReparos.Cadastros.IntegrationTests/   # Testes de integração com Testcontainers
 ├── docker/                         # Configurações de containers e observabilidade
 │   ├── servers.json                # Pré-configuração do pgAdmin 4
 │   └── observability/              # OpenTelemetry Collector, Prometheus, Loki e Grafana
 ├── docker-compose.yml              # Orquestração completa local (API + Web + DB + Otel)
 ├── .github/workflows/ci.yml        # Pipeline CI/CD GitHub Actions
-└── AutoReparos.App.slnx            # Solution .NET 10
+└── AutoReparos.Cadastros.slnx            # Solution .NET 10
 ```
 
 ---
@@ -85,10 +85,10 @@ docker-compose down
 ### Backend (.NET 10)
 ```bash
 # Restaurar e compilar a solution
-dotnet build AutoReparos.App.slnx
+dotnet build AutoReparos.Cadastros.slnx
 
 # Executar a API localmente
-dotnet run --project AutoReparos.API/AutoReparos.API.csproj
+dotnet run --project AutoReparos.Cadastros.Api/AutoReparos.Cadastros.Api.csproj
 ```
 
 ### Frontend (Angular 19)
@@ -106,16 +106,16 @@ A aplicação conta com 303 testes automatizados (100% de aprovação):
 
 ```bash
 # Executar todos os testes
-dotnet test AutoReparos.App.slnx
+dotnet test AutoReparos.Cadastros.slnx
 
 # Executar testes unitários de Domínio (113 testes)
-dotnet test AutoReparos.Domain.Tests/AutoReparos.Domain.Tests.csproj
+dotnet test AutoReparos.Cadastros.Domain.Tests/AutoReparos.Cadastros.Domain.Tests.csproj
 
 # Executar testes unitários de Aplicação (123 testes)
-dotnet test AutoReparos.Application.Tests/AutoReparos.Application.Tests.csproj
+dotnet test AutoReparos.Cadastros.Application.Tests/AutoReparos.Cadastros.Application.Tests.csproj
 
 # Executar testes de integração com Testcontainers (67 testes)
-dotnet test AutoReparos.IntegrationTests/AutoReparos.IntegrationTests.csproj
+dotnet test AutoReparos.Cadastros.IntegrationTests/AutoReparos.Cadastros.IntegrationTests.csproj
 
 # Executar testes unitários do Frontend Web
 cd AutoReparos.Web && yarn test --watch=false
@@ -134,7 +134,7 @@ O workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) executa a vali
 
 ## 7. Integração com o Repositório Pai
 
-Este repositório é registrado como **git submodule** no [repositório pai AutoReparos](https://github.com/Grupo78-PosTech-15SOAT/AutoReparos) no caminho `submodules/AutoReparos.App/`.
+Este repositório é registrado como **git submodule** no [repositório pai AutoReparos](https://github.com/Grupo78-PosTech-15SOAT/AutoReparos) no caminho `submodules/AutoReparos.Cadastros/`.
 
 ### Migrations de produção
 

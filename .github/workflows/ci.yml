@@ -1,4 +1,4 @@
-name: CI - AutoReparos.App
+name: CI - AutoReparos.Cadastros
 
 on:
   push:
@@ -21,9 +21,9 @@ jobs:
       - uses: actions/setup-dotnet@v4.3.1
         with:
           dotnet-version: 10.0.x
-      - run: dotnet restore AutoReparos.App.slnx
-      - run: dotnet build AutoReparos.App.slnx --no-restore -c Release
-      - run: dotnet test AutoReparos.App.slnx --no-build -c Release
+      - run: dotnet restore AutoReparos.Cadastros.slnx
+      - run: dotnet build AutoReparos.Cadastros.slnx --no-restore -c Release
+      - run: dotnet test AutoReparos.Cadastros.slnx --no-build -c Release
 
   frontend:
     runs-on: ubuntu-latest

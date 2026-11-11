@@ -1,4 +1,4 @@
-# Docker Compose - AutoReparos.App (API, Web, PostgreSQL & OpenTelemetry Stack)
+# Docker Compose - AutoReparos.Cadastros (API, Web, PostgreSQL & OpenTelemetry Stack)
 services:
   postgres:
     image: postgres:16
@@ -24,7 +24,7 @@ services:
     image: autoreparos-api
     build:
       context: .
-      dockerfile: AutoReparos.API/Dockerfile
+      dockerfile: AutoReparos.Cadastros.Api/Dockerfile
     container_name: autoreparos-app-api
     restart: always
     environment:
