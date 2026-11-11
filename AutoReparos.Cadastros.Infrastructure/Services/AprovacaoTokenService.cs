@@ -68,7 +68,7 @@ namespace AutoReparos.Cadastros.Infrastructure.Services
 
         private static byte[] Base64UrlDecode(string value)
         {
-            var base64 = value 
+            var base64 = value
                 .Replace('-', '+')
                 .Replace('_', '/');
 

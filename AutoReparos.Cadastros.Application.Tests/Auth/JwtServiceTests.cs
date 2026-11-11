@@ -16,7 +16,7 @@ namespace AutoReparos.Cadastros.Application.Tests.Auth
     {
         private readonly JwtSettings _jwtSettings;
         private readonly JwtService _jwtService;
- 
+
         public JwtServiceTests()
         {
             _jwtSettings = new JwtSettings
@@ -24,7 +24,7 @@ namespace AutoReparos.Cadastros.Application.Tests.Auth
                 Secret = "super-secret-key-that-is-long-enough-for-hmac-sha256-signature-at-least-256-bits",
                 ExpiryHours = 2
             };
- 
+
             JwtSecurityTokenHandler.DefaultOutboundClaimTypeMap.Clear();
             _jwtService = new JwtService(Microsoft.Extensions.Options.Options.Create(_jwtSettings));
         }
@@ -63,7 +63,7 @@ namespace AutoReparos.Cadastros.Application.Tests.Auth
             var claimsString = string.Join(", ", claimTypes);
 
             // Check NameIdentifier Claim
-            var nameIdentifierClaim = jwtToken.Claims.FirstOrDefault(c => 
+            var nameIdentifierClaim = jwtToken.Claims.FirstOrDefault(c =>
                 c.Type == ClaimTypes.NameIdentifier ||
                 c.Type == "nameid" ||
                 c.Type == "sub" ||
@@ -72,26 +72,26 @@ namespace AutoReparos.Cadastros.Application.Tests.Auth
             nameIdentifierClaim!.Value.Should().Be(usuario.Id.ToString());
 
             // Check Email Claim
-            var emailClaim = jwtToken.Claims.FirstOrDefault(c => 
-                c.Type == ClaimTypes.Email || 
-                c.Type == "email" || 
+            var emailClaim = jwtToken.Claims.FirstOrDefault(c =>
+                c.Type == ClaimTypes.Email ||
+                c.Type == "email" ||
                 c.Type.EndsWith("emailaddress"));
             emailClaim.Should().NotBeNull($"because Email claim should be present. Found claims: [{claimsString}]");
             emailClaim!.Value.Should().Be(usuario.Email.Endereco);
 
             // Check Name Claim
-            var nameClaim = jwtToken.Claims.FirstOrDefault(c => 
-                c.Type == ClaimTypes.Name || 
-                c.Type == "unique_name" || 
+            var nameClaim = jwtToken.Claims.FirstOrDefault(c =>
+                c.Type == ClaimTypes.Name ||
+                c.Type == "unique_name" ||
                 c.Type == "name" ||
                 c.Type.EndsWith("name"));
             nameClaim.Should().NotBeNull($"because Name claim should be present. Found claims: [{claimsString}]");
             nameClaim!.Value.Should().Be(usuario.NomeCompleto);
 
             // Check Role Claim
-            var roleClaim = jwtToken.Claims.FirstOrDefault(c => 
-                c.Type == ClaimTypes.Role || 
-                c.Type == "role" || 
+            var roleClaim = jwtToken.Claims.FirstOrDefault(c =>
+                c.Type == ClaimTypes.Role ||
+                c.Type == "role" ||
                 c.Type.EndsWith("role"));
             roleClaim.Should().NotBeNull($"because Role claim should be present. Found claims: [{claimsString}]");
             roleClaim!.Value.Should().Be(usuario.Tipo.ToString());
@@ -102,7 +102,7 @@ namespace AutoReparos.Cadastros.Application.Tests.Auth
         {
             // Arrange & Act
             Action act = () => _jwtService.GenerateToken(null!);
- 
+
             // Assert
             act.Should().Throw<ArgumentNullException>();
         }

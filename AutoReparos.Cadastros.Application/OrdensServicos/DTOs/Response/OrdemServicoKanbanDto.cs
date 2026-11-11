@@ -14,50 +14,50 @@ namespace AutoReparos.Cadastros.Application.OrdensServicos.DTOs.Response
     public abstract record KanbanCardDto;
 
     public record ReceivedKanbanCardDto(
-        Guid Id, 
-        string ClienteNome, 
-        string PlacaVeiculo, 
-        string ModeloVeiculo, 
-        string Status, 
+        Guid Id,
+        string ClienteNome,
+        string PlacaVeiculo,
+        string ModeloVeiculo,
+        string Status,
         DateTime DataEntrada) : KanbanCardDto;
 
     public record DiagnosisKanbanCardDto(
-        Guid Id, 
-        string ClienteNome, 
-        string PlacaVeiculo, 
-        string ModeloVeiculo, 
-        string Status, 
+        Guid Id,
+        string ClienteNome,
+        string PlacaVeiculo,
+        string ModeloVeiculo,
+        string Status,
         string? ResponsavelId) : KanbanCardDto;
 
     public record ApprovalKanbanCardDto(
-        Guid Id, 
-        string ClienteNome, 
-        string PlacaVeiculo, 
-        string ModeloVeiculo, 
-        string Status, 
-        decimal ValorOrcamento, 
-        int QuantidadeServicos, 
+        Guid Id,
+        string ClienteNome,
+        string PlacaVeiculo,
+        string ModeloVeiculo,
+        string Status,
+        decimal ValorOrcamento,
+        int QuantidadeServicos,
         DateTime? EnvioAprovacaoEm) : KanbanCardDto;
 
     public record ExecutionKanbanCardDto(
-        Guid Id, 
-        string ClienteNome, 
-        string PlacaVeiculo, 
-        string ModeloVeiculo, 
-        string Status, 
-        decimal ValorAprovado, 
-        double ProgressoServicos, 
+        Guid Id,
+        string ClienteNome,
+        string PlacaVeiculo,
+        string ModeloVeiculo,
+        string Status,
+        decimal ValorAprovado,
+        double ProgressoServicos,
         string? MecanicoResponsavel,
         int ServicosConcluidos,
         int ServicosTotal) : KanbanCardDto;
 
     public record FinishedKanbanCardDto(
-        Guid Id, 
-        string ClienteNome, 
-        string PlacaVeiculo, 
-        string ModeloVeiculo, 
-        string Status, 
-        decimal ValorFinal, 
-        DateTime DataConclusao, 
+        Guid Id,
+        string ClienteNome,
+        string PlacaVeiculo,
+        string ModeloVeiculo,
+        string Status,
+        decimal ValorFinal,
+        DateTime DataConclusao,
         string StatusEntrega) : KanbanCardDto;
 }

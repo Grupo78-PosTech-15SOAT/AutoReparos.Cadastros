@@ -21,12 +21,12 @@ namespace AutoReparos.Cadastros.Api.Services
             if (context is not null)
             {
                 var request = context.Request;
-                
+
                 // Em ambientes de cloud como Kubernetes/AWS, o Ingress passa o host/proto originais nos cabeçalhos X-Forwarded-*
-                var host = request.Headers["X-Forwarded-Host"].FirstOrDefault() 
+                var host = request.Headers["X-Forwarded-Host"].FirstOrDefault()
                            ?? request.Host.Value;
-                           
-                var scheme = request.Headers["X-Forwarded-Proto"].FirstOrDefault() 
+
+                var scheme = request.Headers["X-Forwarded-Proto"].FirstOrDefault()
                              ?? request.Scheme;
 
                 return $"{scheme}://{host}";

@@ -277,11 +277,11 @@ namespace AutoReparos.Cadastros.Application.Tests.Dashboard
 
             // Assert
             result.UltimasOrdens.Should().HaveCount(5);
-            
+
             // Expected order: os6 (1 day ago), os5 (2 days ago), os4 (3 days ago), os3 (4 days ago), os2 (5 days ago).
             // os1 (6 days ago) should not be returned.
             var ordensList = result.UltimasOrdens.ToList();
-            
+
             ordensList[0].Id.Should().Be(os6.Id);
             ordensList[0].ValorTotal.Should().Be(60.00m);
             ordensList[0].ModeloVeiculo.Should().Be(veiculos[2].Modelo);
