@@ -40,9 +40,6 @@ builder.Services.AddOpenTelemetryObservability(builder.Configuration, builder.Lo
 
 var app = builder.Build();
 
-// Falha na subida (e não na primeira requisição) se a chave RS256 estiver ausente ou inválida
-_ = app.Services.GetRequiredService<ChaveAssinaturaJwt>();
-
 if (app.Configuration.GetValue<bool>("Database:RunMigrations"))
 {
     using var scope = app.Services.CreateScope();
@@ -50,6 +47,10 @@ if (app.Configuration.GetValue<bool>("Database:RunMigrations"))
     await db.Database.MigrateAsync();
     return;
 }
+
+// Falha na subida (e não na primeira requisição) se a chave RS256 estiver ausente ou inválida.
+// Fica depois do ramo de migrações: o Job de migração não precisa da chave de assinatura.
+_ = app.Services.GetRequiredService<ChaveAssinaturaJwt>();
 
 await DbInitializer.SeedDataAsync(
     app.Services,
