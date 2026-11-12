@@ -1,8 +1,10 @@
 using AutoReparos.Cadastros.Application.Clientes.DTOs.Request;
 using AutoReparos.Cadastros.Application.Clientes.DTOs.Response;
 using AutoReparos.Cadastros.Application.Shared;
+using AutoReparos.Cadastros.Domain.Clientes.Repositories;
 using AutoReparos.Cadastros.IntegrationTests.Infrastructure;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Json;
@@ -70,5 +72,23 @@ public class AutenticarClienteEndpointInterno(CustomWebApplicationFactory<Progra
         var resposta = await Client.PostAsJsonAsync("/internal/clientes/autenticar", new AutenticarClienteDto("00000000000", "x@email.com"));
 
         resposta.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact(DisplayName = "C5 - cliente inativo retorna 403, sem token")]
+    public async Task ClienteInativo_Retorna403()
+    {
+        var alvo = await ObterClienteSeedadoAsync();
+        using (var scope = Services.CreateScope())
+        {
+            var repositorio = scope.ServiceProvider.GetRequiredService<IClienteRepository>();
+            var cliente = (await repositorio.GetById(alvo.Id))!;
+            cliente.Inativar();
+            await repositorio.Update(cliente);
+        }
+
+        var resposta = await Client.PostAsJsonAsync("/internal/clientes/autenticar", new AutenticarClienteDto(alvo.Documento, alvo.Email));
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await resposta.Content.ReadAsStringAsync()).Should().NotContain("token", because: "cliente inativo não recebe JWT");
     }
 }

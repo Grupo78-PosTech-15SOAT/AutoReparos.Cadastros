@@ -3,11 +3,20 @@ using AutoReparos.Cadastros.Application.Clientes.DTOs.Response;
 
 namespace AutoReparos.Cadastros.Application.Clientes.UseCases.Interfaces
 {
+    public enum StatusAutenticacaoCliente
+    {
+        Autenticado,
+        NaoEncontrado,
+        Inativo
+    }
+
+    public record ResultadoAutenticacaoCliente(StatusAutenticacaoCliente Status, ClienteAutenticadoDto? Cliente = null);
+
     public interface IAutenticarClienteUseCase
     {
         /// <summary>
-        /// Autentica o cliente por CPF e e-mail; devolve <c>null</c> quando não existe, o e-mail não confere ou o cadastro está inativo.
+        /// Autentica o cliente por CPF e e-mail. <c>NaoEncontrado</c> cobre CPF inexistente e e-mail divergente (sem distinguir, para não revelar cadastros).
         /// </summary>
-        Task<ClienteAutenticadoDto?> ExecuteAsync(AutenticarClienteDto dto);
+        Task<ResultadoAutenticacaoCliente> ExecuteAsync(AutenticarClienteDto dto);
     }
 }
