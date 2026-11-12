@@ -83,4 +83,18 @@ public class NotificacaoUmaVezPorEventId(CustomWebApplicationFactory<Program> fa
         teste.Fila.Excluidas.Should().ContainSingle();
         (await teste.FoiRegistradaAsync(eventId)).Should().BeFalse();
     }
+
+    [Fact(DisplayName = "C7 - entregas simultâneas do mesmo eventId enviam um único e-mail")]
+    public async Task EntregasSimultaneasDoMesmoEvento_EnviamUmaVez()
+    {
+        var teste = new ConsumidorDeTeste(Services);
+        teste.Email.Atraso = TimeSpan.FromMilliseconds(300);
+        var cliente = await teste.ObterClienteSeedadoAsync();
+        var eventId = Guid.NewGuid();
+
+        await teste.ProcessarEmParaleloAsync(ConsumidorDeTeste.Evento(eventId, "pagamento.aprovado.v1", cliente.Id), copias: 4);
+
+        teste.Email.Enviados.Should().ContainSingle();
+        (await teste.FoiRegistradaAsync(eventId)).Should().BeTrue();
+    }
 }

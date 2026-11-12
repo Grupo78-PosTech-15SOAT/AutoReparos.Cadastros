@@ -38,18 +38,22 @@ namespace AutoReparos.Cadastros.Application.Notificacoes
             if (evento is null)
                 return ResultadoNotificacao.Ignorada;
 
-            if (await enviadas.Existe(evento.EventId))
-                return ResultadoNotificacao.Duplicada;
+            // A trava por eventId cobre Existe, envio e registro: entregas simultâneas do mesmo evento não duplicam o e-mail
+            return await enviadas.ComTrava(evento.EventId, async () =>
+            {
+                if (await enviadas.Existe(evento.EventId))
+                    return ResultadoNotificacao.Duplicada;
 
-            var cliente = await clientes.GetById(evento.ClienteId)
-                ?? throw new FalhaPermanenteNotificacaoException($"Cliente {evento.ClienteId} do evento {evento.EventId} não existe.");
+                var cliente = await clientes.GetById(evento.ClienteId)
+                    ?? throw new FalhaPermanenteNotificacaoException($"Cliente {evento.ClienteId} do evento {evento.EventId} não existe.");
 
-            var (assunto, texto) = MontarMensagem(evento, cliente.Nome);
-            await emailSender.EnviarAsync(cliente.Email.Endereco, cliente.Nome, assunto, texto, cancellationToken);
+                var (assunto, texto) = MontarMensagem(evento, cliente.Nome);
+                await emailSender.EnviarAsync(cliente.Email.Endereco, cliente.Nome, assunto, texto, cancellationToken);
 
-            // O eventId só é registrado depois do envio: uma falha anterior permite nova tentativa.
-            var registrada = await enviadas.Registrar(new NotificacaoEnviada(evento.EventId, evento.Tipo, cliente.Id, relogio.GetUtcNow().UtcDateTime));
-            return registrada ? ResultadoNotificacao.Enviada : ResultadoNotificacao.Duplicada;
+                // O eventId só é registrado depois do envio: uma falha anterior permite nova tentativa.
+                var registrada = await enviadas.Registrar(new NotificacaoEnviada(evento.EventId, evento.Tipo, cliente.Id, relogio.GetUtcNow().UtcDateTime));
+                return registrada ? ResultadoNotificacao.Enviada : ResultadoNotificacao.Duplicada;
+            });
         }
 
         private static (string Assunto, string Texto) MontarMensagem(EventoNotificacao evento, string nome)

@@ -27,12 +27,21 @@ public class ConsultaClienteVeiculoPorJwtOuChaveInterna(CustomWebApplicationFact
         return (clientes!.Items.First().Id, veiculos!.Items.First().Id);
     }
 
-    [Theory(DisplayName = "C2 - usuário autenticado consulta cliente e veículo por id")]
-    [MemberData(nameof(Prefixos))]
-    public async Task UsuarioAutenticado_Consulta_RetornaOk(string prefixo)
+    public static TheoryData<string, ETipoUsuario> PrefixosEPapeis()
+    {
+        var dados = new TheoryData<string, ETipoUsuario>();
+        foreach (var prefixo in new[] { "/api", "/api/v1" })
+            foreach (var papel in new[] { ETipoUsuario.Administrador, ETipoUsuario.Atendente, ETipoUsuario.Mecanico })
+                dados.Add(prefixo, papel);
+        return dados;
+    }
+
+    [Theory(DisplayName = "C2 - usuário autenticado (qualquer papel da oficina) consulta cliente e veículo por id")]
+    [MemberData(nameof(PrefixosEPapeis))]
+    public async Task UsuarioAutenticado_Consulta_RetornaOk(string prefixo, ETipoUsuario papel)
     {
         var (clienteId, veiculoId) = await ObterIdsSeedadosAsync();
-        AuthenticateAsRole(ETipoUsuario.Atendente);
+        AuthenticateAsRole(papel);
 
         var cliente = await Client.GetAsync($"{prefixo}/clientes/{clienteId}");
         var veiculo = await Client.GetAsync($"{prefixo}/veiculos/{veiculoId}");
@@ -41,6 +50,22 @@ public class ConsultaClienteVeiculoPorJwtOuChaveInterna(CustomWebApplicationFact
         (await cliente.Content.ReadFromJsonAsync<ClienteDto>())!.Id.Should().Be(clienteId);
         veiculo.StatusCode.Should().Be(HttpStatusCode.OK);
         (await veiculo.Content.ReadFromJsonAsync<VeiculoDto>())!.Id.Should().Be(veiculoId);
+    }
+
+    [Fact(DisplayName = "C2 - o veículo devolve o clienteId (dono) que o OS usa para validar a abertura")]
+    public async Task Veiculo_ExpoeClienteIdEmCamelCase()
+    {
+        var (clienteId, veiculoId) = await ObterIdsSeedadosAsync();
+        AuthenticateAsRole(ETipoUsuario.Atendente);
+        var cliente = await Client.GetFromJsonAsync<ClienteDto>($"/api/v1/clientes/{clienteId}");
+        var veiculo = await Client.GetFromJsonAsync<VeiculoDto>($"/api/v1/veiculos/{veiculoId}");
+
+        var json = await Client.GetStringAsync($"/api/v1/veiculos/{veiculoId}");
+        var raiz = System.Text.Json.JsonDocument.Parse(json).RootElement;
+
+        raiz.GetProperty("clienteId").GetGuid().Should().Be(veiculo!.ClienteId);
+        cliente!.Id.Should().Be(clienteId);
+        raiz.GetProperty("id").GetGuid().Should().Be(veiculoId);
     }
 
     [Theory(DisplayName = "C2 - sem usuário, a chave interna consulta cliente e veículo")]

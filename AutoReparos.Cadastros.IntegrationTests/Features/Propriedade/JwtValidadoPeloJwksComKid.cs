@@ -3,6 +3,8 @@ using AutoReparos.Cadastros.Application.Auth.DTOs.Response;
 using AutoReparos.Cadastros.Domain.Usuarios.Enums;
 using AutoReparos.Cadastros.IntegrationTests.Infrastructure;
 using FluentAssertions;
+using AutoReparos.Cadastros.Infrastructure.Identity.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
@@ -75,6 +77,23 @@ public class JwtValidadoPeloJwksComKid(CustomWebApplicationFactory<Program> fact
         var handler = new JwtSecurityTokenHandler();
         var falso = handler.WriteToken(handler.CreateToken(descriptor));
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", falso);
+
+        (await Client.GetAsync("/api/clientes")).StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact(DisplayName = "C3 - token assinado com a chave ativa mas de outro emissor é recusado")]
+    public async Task TokenDeOutroEmissor_ComAChaveAtiva_Retorna401()
+    {
+        var chave = Services.GetRequiredService<ChaveAssinaturaJwt>();
+        var descriptor = new SecurityTokenDescriptor
+        {
+            Issuer = "http://emissor-estrangeiro.test",
+            Expires = DateTime.UtcNow.AddHours(1),
+            Subject = new System.Security.Claims.ClaimsIdentity([new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, ETipoUsuario.Administrador.ToString())]),
+            SigningCredentials = new SigningCredentials(chave.ChavePrivada, SecurityAlgorithms.RsaSha256)
+        };
+        var handler = new JwtSecurityTokenHandler();
+        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", handler.WriteToken(handler.CreateToken(descriptor)));
 
         (await Client.GetAsync("/api/clientes")).StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }

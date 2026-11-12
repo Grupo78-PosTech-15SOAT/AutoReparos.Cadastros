@@ -12,20 +12,29 @@ namespace AutoReparos.Cadastros.IntegrationTests.Infrastructure;
 
 public class EmailSenderFalso : IEmailSender
 {
+    private readonly object _trava = new();
+    private int _chamadas;
+
     public List<(string Email, string Assunto)> Enviados { get; } = [];
-    public int Chamadas { get; private set; }
+    public int Chamadas => _chamadas;
+
+    /// <summary>Espera dentro do envio, para alargar a janela em que duas entregas do mesmo evento se sobrepõem.</summary>
+    public TimeSpan Atraso { get; set; }
 
     /// <summary>Número de chamadas iniciais que falham.</summary>
     public int FalhasIniciais { get; set; }
 
-    public Task EnviarAsync(string destinatarioEmail, string destinatarioNome, string assunto, string texto, CancellationToken cancellationToken)
+    public async Task EnviarAsync(string destinatarioEmail, string destinatarioNome, string assunto, string texto, CancellationToken cancellationToken)
     {
-        Chamadas++;
-        if (Chamadas <= FalhasIniciais)
+        var chamada = Interlocked.Increment(ref _chamadas);
+        if (Atraso > TimeSpan.Zero)
+            await Task.Delay(Atraso, cancellationToken);
+
+        if (chamada <= FalhasIniciais)
             throw new InvalidOperationException("SendGrid indisponível");
 
-        Enviados.Add((destinatarioEmail, assunto));
-        return Task.CompletedTask;
+        lock (_trava)
+            Enviados.Add((destinatarioEmail, assunto));
     }
 }
 
@@ -93,6 +102,23 @@ public class ConsumidorDeTeste(IServiceProvider services, int maxTentativas = 3)
             NullLogger<ConsumirFilaNotificacoesUseCase>.Instance);
 
         await consumidor.ExecuteAsync(CancellationToken.None);
+    }
+
+    /// <summary>Processa o mesmo corpo em <paramref name="copias"/> consumidores simultâneos (entregas duplicadas ao mesmo tempo).</summary>
+    public async Task ProcessarEmParaleloAsync(string corpo, int copias)
+    {
+        var tarefas = Enumerable.Range(0, copias).Select(async _ =>
+        {
+            using var scope = services.CreateScope();
+            var processar = new ProcessarEventoNotificacaoUseCase(
+                scope.ServiceProvider.GetRequiredService<INotificacaoEnviadaRepository>(),
+                scope.ServiceProvider.GetRequiredService<IClienteRepository>(),
+                Email,
+                TimeProvider.System);
+            await processar.ExecuteAsync(corpo, CancellationToken.None);
+        });
+
+        await Task.WhenAll(tarefas);
     }
 
     public async Task<Cliente> ObterClienteSeedadoAsync()

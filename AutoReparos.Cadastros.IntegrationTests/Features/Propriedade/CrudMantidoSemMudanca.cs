@@ -2,6 +2,8 @@ using AutoReparos.Cadastros.Application.Clientes.DTOs.Request;
 using AutoReparos.Cadastros.Application.Clientes.DTOs.Response;
 using AutoReparos.Cadastros.Application.Shared;
 using AutoReparos.Cadastros.Application.Usuarios.DTOs.Request;
+using AutoReparos.Cadastros.Application.Veiculos.DTOs.Request;
+using AutoReparos.Cadastros.Application.Veiculos.DTOs.Response;
 using AutoReparos.Cadastros.Domain.Usuarios.Enums;
 using AutoReparos.Cadastros.IntegrationTests.Infrastructure;
 using Bogus;
@@ -46,6 +48,47 @@ public class CrudMantidoSemMudanca(CustomWebApplicationFactory<Program> factory)
         (await Client.GetAsync($"{prefixo}/clientes/{id}")).StatusCode.Should().Be(HttpStatusCode.NotFound);
         (await Client.PutAsJsonAsync($"{prefixo}/clientes/{Guid.NewGuid()}", new ClienteUpdateDto("Nome", "11987654321", "a@b.com")))
             .StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Theory(DisplayName = "C9 - ciclo de vida de veículo: 201, 200, 204, 404 após excluir e 400 com dados inválidos")]
+    [MemberData(nameof(Prefixos))]
+    public async Task Veiculo_CicloDeVida(string prefixo)
+    {
+        await AuthenticateAsync();
+        var clientes = await Client.GetFromJsonAsync<PagedResult<ClienteDto>>($"{prefixo}/clientes?pageNumber=1&pageSize=1");
+        var clienteId = clientes!.Items.First().Id;
+        var faker = new Faker("pt_BR");
+        var placa = $"{faker.Random.String2(3, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")}{faker.Random.String2(4, "0123456789")}";
+        var novo = new VeiculoCreateDto(clienteId, "Fiat", "Uno", 2015, 2016, placa, faker.Random.AlphaNumeric(17).ToUpper(), faker.Random.ReplaceNumbers("###########"));
+
+        var criado = await Client.PostAsJsonAsync($"{prefixo}/veiculos", novo);
+        criado.StatusCode.Should().Be(HttpStatusCode.Created, await criado.Content.ReadAsStringAsync());
+        var id = (await criado.Content.ReadFromJsonAsync<VeiculoDto>())!.Id;
+
+        (await Client.GetAsync($"{prefixo}/veiculos/{id}")).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await Client.PutAsJsonAsync($"{prefixo}/veiculos/{id}", new VeiculoUpdateDto("Fiat", "Palio", 2015, 2016))).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await Client.PostAsJsonAsync($"{prefixo}/veiculos", novo with { Placa = "invalida" })).StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await Client.DeleteAsync($"{prefixo}/veiculos/{id}")).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await Client.GetAsync($"{prefixo}/veiculos/{id}")).StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Theory(DisplayName = "C9 - ciclo de vida de usuário: 201, 200, 204, 404 após excluir e 400 com dados inválidos")]
+    [MemberData(nameof(Prefixos))]
+    public async Task Usuario_CicloDeVida(string prefixo)
+    {
+        await AuthenticateAsync();
+        var faker = new Faker("pt_BR");
+        var novo = new UsuarioCreateDto(faker.Person.FullName, faker.Internet.Email(), "Senha@123", ETipoUsuario.Mecanico);
+
+        var criado = await Client.PostAsJsonAsync($"{prefixo}/usuarios", novo);
+        criado.StatusCode.Should().Be(HttpStatusCode.Created, await criado.Content.ReadAsStringAsync());
+        var id = (await criado.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>()).GetProperty("id").GetGuid();
+
+        (await Client.GetAsync($"{prefixo}/usuarios/{id}")).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await Client.PutAsJsonAsync($"{prefixo}/usuarios/{id}", new UsuarioUpdateDto("Nome Atualizado", ETipoUsuario.Atendente))).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await Client.PostAsJsonAsync($"{prefixo}/usuarios", novo with { Email = "nao-e-email" })).StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await Client.DeleteAsync($"{prefixo}/usuarios/{id}")).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await Client.GetAsync($"{prefixo}/usuarios/{id}")).StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Theory(DisplayName = "C9 - dados inválidos de cliente retornam 400 (contrato atual)")]

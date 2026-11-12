@@ -91,4 +91,14 @@ public class AutenticarClienteEndpointInterno(CustomWebApplicationFactory<Progra
         resposta.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         (await resposta.Content.ReadAsStringAsync()).Should().NotContain("token", because: "cliente inativo não recebe JWT");
     }
+
+    [Fact(DisplayName = "C5 - e-mail em outra caixa e com espaços nas pontas ainda autentica")]
+    public async Task EmailEmOutraCaixaEComEspacos_RetornaOk()
+    {
+        var alvo = await ObterClienteSeedadoAsync();
+
+        var resposta = await Client.PostAsJsonAsync("/internal/clientes/autenticar", new AutenticarClienteDto(alvo.Documento, $"  {alvo.Email.ToUpperInvariant()}  "));
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
 }
