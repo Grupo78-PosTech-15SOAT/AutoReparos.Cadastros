@@ -1,16 +1,16 @@
-# AutoReparos.Cadastros - Aplicação Principal (API, Frontend & Domínio)
+# AutoReparos.Cadastros - Backend (API e Domínio)
 
 > **Projeto:** AutoReparos - Sistema Integrado de Oficina Mecânica  
 > **Fase:** Fase 3 Tech Challenge (13SOAT / 15SOAT FIAP)  
-> **Componente:** Repositório 4/4 da Arquitetura Multi-Repo  
-> **Stack:** C# .NET 10, ASP.NET Core Minimal APIs, Entity Framework Core, PostgreSQL 16, Angular 19 (Signals & Standalone), OpenTelemetry, Docker.  
+> **Componente:** Serviço de Cadastros da arquitetura multi-repositório
+> **Stack:** C# .NET 10, ASP.NET Core Minimal APIs, Entity Framework Core, PostgreSQL 16, OpenTelemetry, Docker.
 > **Repositório Oficial:** [Grupo78-PosTech-15SOAT/AutoReparos.Cadastros](https://github.com/Grupo78-PosTech-15SOAT/AutoReparos.Cadastros)
 
 ---
 
 ## 1. Visão Geral
 
-O **AutoReparos.Cadastros** é o repositório central contendo toda a lógica de negócio, APIs REST, persistência de dados e aplicação web de interface com o usuário da oficina mecânica:
+O **AutoReparos.Cadastros** contém as APIs REST, regras de negócio e persistência do backend. A aplicação Angular da oficina foi extraída para o repositório [AutoReparos.Web](https://github.com/Grupo78-PosTech-15SOAT/AutoReparos.Web), com branch de desenvolvimento e pipeline próprios.
 
 | Projeto | Camada / Descrição |
 |---|---|
@@ -18,10 +18,9 @@ O **AutoReparos.Cadastros** é o repositório central contendo toda a lógica de
 | `AutoReparos.Cadastros.Application` | Casos de uso, DTOs, orquestração de serviços de aplicação e validação |
 | `AutoReparos.Cadastros.Infrastructure` | `AppDbContext` EF Core, repositórios PostgreSQL, Identity, geração de JWT e integrações |
 | `AutoReparos.Cadastros.Api` | Endpoints Minimal APIs, Swagger, injeção de dependência e OpenTelemetry |
-| `AutoReparos.Web` | Frontend moderno em Angular 19 com Standalone Components e Angular Signals |
 | `AutoReparos.Cadastros.Domain.Tests` | 113 testes unitários de regras de domínio (xUnit + FluentAssertions) |
-| `AutoReparos.Cadastros.Application.Tests` | 134 testes unitários de casos de uso e métricas (xUnit + NSubstitute + FluentAssertions) |
-| `AutoReparos.Cadastros.IntegrationTests` | 67 testes de integração ponta a ponta com **Testcontainers PostgreSQL** |
+| `AutoReparos.Cadastros.Application.Tests` | 151 testes unitários de casos de uso e métricas (xUnit + NSubstitute + FluentAssertions) |
+| `AutoReparos.Cadastros.IntegrationTests` | 78 testes de integração ponta a ponta com **Testcontainers PostgreSQL** |
 
 ---
 
@@ -36,17 +35,14 @@ AutoReparos.Cadastros/
 ├── AutoReparos.Cadastros.Infrastructure/              # Entity Framework Core, PostgreSQL e Identity
 ├── AutoReparos.Cadastros.Api/                # Minimal APIs, middlewares e Dockerfile
 │   └── Dockerfile                  # Multi-stage build .NET 10 SDK & ASP.NET Runtime
-├── AutoReparos.Web/                # Frontend Angular 19 (Signals & Standalone)
-│   ├── Dockerfile                  # Multi-stage build Node.js 22 + Nginx unprivileged
-│   └── nginx.conf                  # Configuração SPA na porta 8080
 ├── AutoReparos.Cadastros.Domain.Tests/       # Suíte de testes unitários do Domínio
 ├── AutoReparos.Cadastros.Application.Tests/  # Suíte de testes unitários da Aplicação
 ├── AutoReparos.Cadastros.IntegrationTests/   # Testes de integração com Testcontainers
 ├── docker/                         # Configurações de containers e observabilidade
 │   ├── servers.json                # Pré-configuração do pgAdmin 4
 │   └── observability/              # OpenTelemetry Collector, Prometheus, Loki e Grafana
-├── docker-compose.yml              # Orquestração completa local (API + Web + DB + Otel)
-├── .github/workflows/ci.yml        # Pipeline CI/CD GitHub Actions
+├── docker-compose.yml              # Orquestração local (API + DB + Otel)
+├── .github/workflows/ci-cd.yml     # Pipeline CI/CD GitHub Actions
 └── AutoReparos.Cadastros.slnx            # Solution .NET 10
 ```
 
@@ -54,10 +50,10 @@ AutoReparos.Cadastros/
 
 ## 3. Execução Local com Docker Compose
 
-O repositório disponibiliza um ambiente completo pronto para execução local via Docker Compose:
+O repositório disponibiliza API, banco e observabilidade para execução local via Docker Compose. O frontend é executado a partir de `AutoReparos.Web` ou do Compose do repositório pai.
 
 ```bash
-# Subir toda a aplicação (PostgreSQL, API, Web, pgAdmin e Stack de Observabilidade)
+# Subir PostgreSQL, API, pgAdmin e Stack de Observabilidade
 docker-compose up -d --build
 ```
 
@@ -66,7 +62,6 @@ docker-compose up -d --build
 | Serviço | Container | URL de Acesso | Credenciais Padrão |
 |---|---|---|---|
 | **API REST & Swagger** | `autoreparos-app-api` | [http://localhost:8080/swagger](http://localhost:8080/swagger) | — |
-| **Frontend Web** | `autoreparos-app-web` | [http://localhost:4200](http://localhost:4200) | — |
 | **pgAdmin 4** | `autoreparos-app-pgadmin` | [http://localhost:5050](http://localhost:5050) | `admin@autoreparos.com` / `Admin@123` |
 | **Grafana** | `autoreparos-app-grafana` | [http://localhost:3000](http://localhost:3000) | `admin` / `admin` |
 | **Jaeger Traces** | `autoreparos-app-jaeger` | [http://localhost:16686](http://localhost:16686) | — |
@@ -91,18 +86,13 @@ dotnet build AutoReparos.Cadastros.slnx
 dotnet run --project AutoReparos.Cadastros.Api/AutoReparos.Cadastros.Api.csproj
 ```
 
-### Frontend (Angular 19)
-```bash
-cd AutoReparos.Web
-yarn install
-yarn start
-```
+Para desenvolver o frontend, use a branch `develop` do repositório [AutoReparos.Web](https://github.com/Grupo78-PosTech-15SOAT/AutoReparos.Web).
 
 ---
 
-## 5. Suíte de Testes Automatizados (303 Testes)
+## 5. Suíte de Testes Automatizados
 
-A aplicação conta com 303 testes automatizados (100% de aprovação):
+Execute as suítes do backend pela solution:
 
 ```bash
 # Executar todos os testes
@@ -111,24 +101,18 @@ dotnet test AutoReparos.Cadastros.slnx
 # Executar testes unitários de Domínio (113 testes)
 dotnet test AutoReparos.Cadastros.Domain.Tests/AutoReparos.Cadastros.Domain.Tests.csproj
 
-# Executar testes unitários de Aplicação (123 testes)
+# Executar testes unitários de Aplicação (151 testes)
 dotnet test AutoReparos.Cadastros.Application.Tests/AutoReparos.Cadastros.Application.Tests.csproj
 
-# Executar testes de integração com Testcontainers (67 testes)
+# Executar testes de integração com Testcontainers (78 testes)
 dotnet test AutoReparos.Cadastros.IntegrationTests/AutoReparos.Cadastros.IntegrationTests.csproj
-
-# Executar testes unitários do Frontend Web
-cd AutoReparos.Web && yarn test --watch=false
 ```
 
 ---
 
 ## 6. Pipeline de CI/CD
 
-O workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) executa a validação paralela:
-1. **Backend:** Compilação .NET 10, testes unitários de domínio e aplicação, testes de integração com PostgreSQL e build da imagem Docker.
-2. **Frontend:** Instalação via Yarn (`--frozen-lockfile`), compilação de produção do Angular e testes unitários.
-- Todas as GitHub Actions são fixadas em hashes SHA de 40 caracteres conforme os padrões de segurança do SonarCloud.
+O workflow [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml) compila e testa a solution .NET, confere a cobertura mínima e executa o quality gate do SonarCloud. A compilação e os testes Angular pertencem ao pipeline de `AutoReparos.Web`.
 
 ---
 
@@ -142,7 +126,7 @@ O startup da API continua fazendo migrations por padrão em desenvolvimento. Em 
 
 ## 8. CI/CD e configuração do repositório
 
-O pipeline `.github/workflows/ci-cd.yml` roda em pull request para `main` e em push na `develop` e na `main`, com os jobs `build` (compila e confere `dotnet format`), `test` (testes da solution, cobertura mínima de linhas de 80%), `frontend` (testes do `AutoReparos.Web`) e `quality` (SonarCloud).
+O pipeline `.github/workflows/ci-cd.yml` roda em pull request para `main` e `develop` e em push nessas branches, com os jobs `build` (compila e confere `dotnet format`), `test` (testes da solution, cobertura mínima de linhas de 80%) e `quality` (SonarCloud).
 
 Para o job `quality` passar, o repositório precisa destes itens em **Settings → Secrets and variables → Actions**:
 
