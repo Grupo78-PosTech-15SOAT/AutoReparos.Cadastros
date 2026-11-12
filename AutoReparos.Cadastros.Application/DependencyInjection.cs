@@ -36,6 +36,7 @@ namespace AutoReparos.Cadastros.Application
             services.AddScoped<IAtualizarClienteUseCase, AtualizarClienteUseCase>();
             services.AddScoped<IExcluirClienteUseCase, ExcluirClienteUseCase>();
             services.AddScoped<IObterMeusVeiculosUseCase, ObterMeusVeiculosUseCase>();
+            services.AddScoped<IAutenticarClienteUseCase, AutenticarClienteUseCase>();
 
             // Veículos
             services.AddScoped<ICriarVeiculoUseCase, CriarVeiculoUseCase>();

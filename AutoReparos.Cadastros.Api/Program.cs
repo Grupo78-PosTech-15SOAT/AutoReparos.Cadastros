@@ -3,6 +3,7 @@ using AutoReparos.Cadastros.Api.Endpoints;
 using AutoReparos.Cadastros.Api.Middlewares;
 using AutoReparos.Cadastros.Application;
 using AutoReparos.Cadastros.Infrastructure.Data;
+using AutoReparos.Cadastros.Infrastructure.Identity.Services;
 using AutoReparos.Cadastros.Infrastructure.IoC;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
@@ -39,6 +40,9 @@ builder.Services.AddOpenTelemetryObservability(builder.Configuration, builder.Lo
 
 var app = builder.Build();
 
+// Falha na subida (e não na primeira requisição) se a chave RS256 estiver ausente ou inválida
+_ = app.Services.GetRequiredService<ChaveAssinaturaJwt>();
+
 if (app.Configuration.GetValue<bool>("Database:RunMigrations"))
 {
     using var scope = app.Services.CreateScope();
@@ -55,9 +59,19 @@ app.UseSwagger();
 app.UseSwaggerUI(options =>
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "AutoReparos API v1"));
 
+// /api/v1/{clientes,veiculos,usuarios} é o mesmo contrato do prefixo /api (D-28)
+app.Use((context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api/v1", out var resto))
+        context.Request.Path = new PathString("/api").Add(resto);
+    return next();
+});
+
 app.UseMiddleware<CorrelationIdMiddleware>();
 
 app.UseExceptionHandler();
+
+app.UseRouting();
 
 app.UseCors("AllowFrontend");
 
@@ -69,6 +83,8 @@ if (!app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapOidcEndpoints();
+app.MapInternoEndpoints();
 app.MapAuthEndpoints();
 app.MapUsuariosEndpoints();
 app.MapClientesEndpoints();

@@ -8,6 +8,7 @@ using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using Xunit;
 
 namespace AutoReparos.Cadastros.Application.Tests.Auth
@@ -21,12 +22,14 @@ namespace AutoReparos.Cadastros.Application.Tests.Auth
         {
             _jwtSettings = new JwtSettings
             {
-                Secret = "super-secret-key-that-is-long-enough-for-hmac-sha256-signature-at-least-256-bits",
+                Issuer = "http://cadastros.test",
+                ChavePrivadaPem = RSA.Create(2048).ExportPkcs8PrivateKeyPem(),
                 ExpiryHours = 2
             };
 
             JwtSecurityTokenHandler.DefaultOutboundClaimTypeMap.Clear();
-            _jwtService = new JwtService(Microsoft.Extensions.Options.Options.Create(_jwtSettings));
+            var opcoes = Microsoft.Extensions.Options.Options.Create(_jwtSettings);
+            _jwtService = new JwtService(opcoes, new ChaveAssinaturaJwt(opcoes));
         }
 
         [Fact(DisplayName = "GenerateToken Should Return Valid Token Successfully")]
@@ -97,11 +100,23 @@ namespace AutoReparos.Cadastros.Application.Tests.Auth
             roleClaim!.Value.Should().Be(usuario.Tipo.ToString());
         }
 
+        [Fact(DisplayName = "GenerateToken Should Sign With RS256 And Carry The Active Key Id")]
+        public void GenerateToken_ShouldSignWithRs256AndCarryKid()
+        {
+            var usuario = new Usuario("John Doe", "john.doe@example.com", ETipoUsuario.Administrador);
+
+            var jwtToken = new JwtSecurityTokenHandler().ReadJwtToken(_jwtService.GenerateToken(usuario));
+
+            jwtToken.Header.Alg.Should().Be("RS256");
+            jwtToken.Header.Kid.Should().NotBeNullOrWhiteSpace();
+            jwtToken.Issuer.Should().Be("http://cadastros.test");
+        }
+
         [Fact(DisplayName = "GenerateToken With Null Usuario Should Throw ArgumentNullException")]
         public void GenerateToken_WithNullUsuario_ShouldThrowArgumentNullException()
         {
             // Arrange & Act
-            Action act = () => _jwtService.GenerateToken(null!);
+            Action act = () => _jwtService.GenerateToken((Usuario)null!);
 
             // Assert
             act.Should().Throw<ArgumentNullException>();

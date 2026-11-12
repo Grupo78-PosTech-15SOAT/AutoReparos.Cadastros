@@ -1,15 +1,12 @@
+using AutoReparos.Cadastros.Application.Auth.Services.Interfaces;
 using AutoReparos.Cadastros.Application.Veiculos.DTOs.Response;
 using AutoReparos.Cadastros.Domain.Clientes.Repositories;
 using AutoReparos.Cadastros.IntegrationTests.Infrastructure;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Security.Claims;
-using System.Text;
 using Xunit;
 
 namespace AutoReparos.Cadastros.IntegrationTests.Features.PortalCliente;
@@ -18,11 +15,9 @@ namespace AutoReparos.Cadastros.IntegrationTests.Features.PortalCliente;
 public class PortalClienteIntegrationTests(CustomWebApplicationFactory<Program> factory)
     : IntegrationTestBase(factory)
 {
-    private const string JwtSecret = "test_jwt_dummy_secret_key_with_32_chars_ok!";
-
     /// <summary>
     /// Gera um token JWT de cliente localmente consultando o ID real do cliente seedado no banco.
-    /// Replica exatamente os claims e algoritmo emitidos pela Lambda serverless.
+    /// Usa o mesmo emissor RS256 que o endpoint interno do Cadastros usa para a AuthLambda.
     /// </summary>
     private async Task<string> ObterTokenClienteAsync(string cpf, string email)
     {
@@ -31,31 +26,7 @@ public class PortalClienteIntegrationTests(CustomWebApplicationFactory<Program> 
         var cliente = await clienteRepo.GetByDocumentoOrEmail(cpf, email)
             ?? throw new InvalidOperationException($"Cliente com CPF {cpf} não encontrado no banco de testes.");
 
-        var key = Encoding.ASCII.GetBytes(JwtSecret);
-        var tokenHandler = new JwtSecurityTokenHandler();
-
-        var claims = new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, cliente.Id.ToString()),
-            new Claim("sub", cliente.Id.ToString()),
-            new Claim(ClaimTypes.Name, cliente.Nome),
-            new Claim(ClaimTypes.Email, email),
-            new Claim("cpf", cpf),
-            new Claim(ClaimTypes.Role, "Cliente")
-        };
-
-        var tokenDescriptor = new SecurityTokenDescriptor
-        {
-            Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddHours(1),
-            SigningCredentials = new SigningCredentials(
-                new SymmetricSecurityKey(key),
-                SecurityAlgorithms.HmacSha256Signature
-            )
-        };
-
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-        return tokenHandler.WriteToken(token);
+        return scope.ServiceProvider.GetRequiredService<IJwtService>().GenerateToken(cliente);
     }
 
     [Fact(DisplayName = "GET /api/clientes/meus-veiculos - Cliente deve visualizar apenas seus veículos")]

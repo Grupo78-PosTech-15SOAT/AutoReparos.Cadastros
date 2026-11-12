@@ -75,6 +75,23 @@ docker-compose down
 
 ---
 
+## 3.1 Autenticação: JWT RS256, JWKS e chave interna
+
+O Cadastros emite os tokens (usuários e clientes) com **RS256** e publica a chave pública em `GET /.well-known/openid-configuration` e `GET /.well-known/jwks.json`. OS, Cobrança e Execução validam o token por `Authority`, sem segredo compartilhado, e cacheiam o JWKS por 10 minutos.
+
+| Variável | Conteúdo |
+| --- | --- |
+| `Jwt__Issuer` | Emissor (`iss`) e `issuer` do discovery, por exemplo a URL pública do Cadastros |
+| `Jwt__ChavePrivadaPem` | Chave RSA privada em PEM (PKCS#8), vinda de um Secret do Kubernetes |
+| `Jwt__KeyId` | Opcional: o `kid` da chave ativa; sem ele, usa o thumbprint da chave pública |
+| `Interno__Chave` | Segredo de `X-Chave-Interna`, vindo de um Secret do Kubernetes |
+
+Gerar uma chave para desenvolvimento: `openssl genrsa 2048 | openssl pkcs8 -topk8 -nocrypt` e exportar o resultado em `JWT_CHAVE_PRIVADA_PEM`.
+
+**Rotação manual da chave** (há uma chave ativa por vez): gere uma chave nova, atualize o Secret `Jwt__ChavePrivadaPem` e reinicie o Cadastros. O `kid` muda junto com a chave. Os tokens emitidos com a chave anterior deixam de valer na hora, e os serviços passam a aceitar a chave nova assim que o cache do JWKS (10 minutos) expira. Combine a troca com um horário de baixo uso.
+
+**Rotas internas:** `POST /internal/clientes/autenticar` (CPF e e-mail; devolve o cliente e o JWT) só responde com `X-Chave-Interna` válido e deve ficar acessível apenas dentro do cluster (NetworkPolicy). `GET /api/v1/clientes/{id}` e `GET /api/v1/veiculos/{id}` aceitam o JWT de um usuário da oficina ou, sem usuário, a chave interna. `/api/v1/{clientes,veiculos,usuarios}` e `/api/...` são o mesmo contrato.
+
 ## 4. Execução Manual para Desenvolvimento
 
 ### Backend (.NET 10)

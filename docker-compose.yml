@@ -5,7 +5,7 @@ services:
     container_name: autoreparos-app-postgres
     restart: always
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-autoreparos}
+      POSTGRES_DB: ${POSTGRES_DB:-cadastros_db}
       POSTGRES_USER: ${POSTGRES_USER:-admin}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-Admin@123}
     ports:
@@ -13,7 +13,7 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d autoreparos"]
+      test: ["CMD-SHELL", "pg_isready -U admin -d cadastros_db"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -29,12 +29,13 @@ services:
     restart: always
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
-      - ConnectionStrings__DbConnection=Host=postgres;Database=${POSTGRES_DB:-autoreparos};Username=${POSTGRES_USER:-admin};Password=${DB_PASSWORD:-Admin@123}
-      - Jwt__Secret=${JWT_SECRET:-FBQOvEaUYAlmdilnGOk7vKzO9xUHiLgb8QCFUrk6af9}
+      - ConnectionStrings__DbConnection=Host=postgres;Database=${POSTGRES_DB:-cadastros_db};Username=${POSTGRES_USER:-admin};Password=${DB_PASSWORD:-Admin@123}
+      - Jwt__Issuer=${JWT_ISSUER:-http://localhost:8080}
+      - Jwt__ChavePrivadaPem=${JWT_CHAVE_PRIVADA_PEM:?defina JWT_CHAVE_PRIVADA_PEM com a chave RSA PKCS#8 em PEM (veja o README)}
+      - Interno__Chave=${CHAVE_INTERNA:?defina CHAVE_INTERNA (segredo de X-Chave-Interna)}
       - Jwt__ExpiryHours=${JWT_EXPIRY_HOURS:-2}
       - SeedUser__Email=${SEED_USER_EMAIL:-admin@autoreparos.com}
       - SeedUser__Password=${SEED_USER_PASSWORD:-Admin@123}
-      - AprovacaoToken__Secret=${APROVACAO_TOKEN_SECRET:-another_super_secret_key_for_approval_tokens_with_enough_length}
       - SendGrid__ApiKey=${SENDGRID_API_KEY:-SG.dummy_key}
       - SendGrid__FromEmail=${SENDGRID_FROM_EMAIL:-noreply@autoreparos.com}
       - SendGrid__FromName=${SENDGRID_FROM_NAME:-AutoReparos}

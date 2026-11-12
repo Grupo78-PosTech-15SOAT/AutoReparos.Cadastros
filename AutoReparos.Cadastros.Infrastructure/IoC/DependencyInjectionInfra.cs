@@ -41,6 +41,7 @@ namespace AutoReparos.Cadastros.Infrastructure.IoC
             services.AddScoped<IVeiculoRepository, VeiculoRepository>();
             services.AddScoped<IUsuarioRepository, UsuarioRepository>();
             services.AddScoped<IAuthRepository, AuthRepository>();
+            services.AddSingleton<ChaveAssinaturaJwt>();
             services.AddScoped<IJwtService, JwtService>();
 
             return services;
