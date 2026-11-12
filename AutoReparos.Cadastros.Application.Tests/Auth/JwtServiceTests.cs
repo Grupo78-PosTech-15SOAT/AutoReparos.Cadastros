@@ -112,6 +112,18 @@ namespace AutoReparos.Cadastros.Application.Tests.Auth
             jwtToken.Issuer.Should().Be("http://cadastros.test");
         }
 
+        [Fact(DisplayName = "ChaveAssinaturaJwt Should Accept A PEM With Literal Backslash-n Line Breaks")]
+        public void ChaveAssinaturaJwt_ShouldAcceptPemWithLiteralLineBreaks()
+        {
+            var emUmaLinha = RSA.Create(2048).ExportPkcs8PrivateKeyPem().Replace("\r\n", "\n").Replace("\n", "\\n");
+            var opcoes = Microsoft.Extensions.Options.Options.Create(new JwtSettings { Issuer = "http://cadastros.test", ChavePrivadaPem = emUmaLinha });
+
+            var chave = new ChaveAssinaturaJwt(opcoes);
+
+            emUmaLinha.Should().NotContain("\n");
+            chave.Kid.Should().NotBeNullOrWhiteSpace();
+        }
+
         [Fact(DisplayName = "GenerateToken With Null Usuario Should Throw ArgumentNullException")]
         public void GenerateToken_WithNullUsuario_ShouldThrowArgumentNullException()
         {

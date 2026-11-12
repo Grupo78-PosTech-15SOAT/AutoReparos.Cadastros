@@ -26,7 +26,8 @@ public sealed class ChaveAssinaturaJwt
             throw new InvalidOperationException($"'{JwtSettings.SectionName}:Issuer' é obrigatório.");
 
         var rsa = RSA.Create();
-        rsa.ImportFromPem(settings.ChavePrivadaPem);
+        // Variáveis de ambiente e Secrets costumam trazer o PEM em uma linha, com "\n" literal no lugar das quebras
+        rsa.ImportFromPem(settings.ChavePrivadaPem.Replace("\\n", "\n"));
 
         var rsaPublica = RSA.Create();
         rsaPublica.ImportParameters(rsa.ExportParameters(false));
