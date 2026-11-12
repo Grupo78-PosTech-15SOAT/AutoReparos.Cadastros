@@ -47,6 +47,27 @@ namespace AutoReparos.Cadastros.Infrastructure.Migrations
                     b.ToTable("Clientes");
                 });
 
+            modelBuilder.Entity("AutoReparos.Cadastros.Domain.Notificacoes.Entities.NotificacaoEnviada", b =>
+                {
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ClienteId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("EnviadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("EventId");
+
+                    b.ToTable("NotificacoesEnviadas", (string)null);
+                });
+
             modelBuilder.Entity("AutoReparos.Cadastros.Domain.Veiculos.Entities.Veiculo", b =>
                 {
                     b.Property<Guid>("Id")

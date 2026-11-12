@@ -1,6 +1,10 @@
-﻿using AutoReparos.Cadastros.Application.Auth.Services.Interfaces;
+﻿using Amazon.SQS;
+using AutoReparos.Cadastros.Application.Auth.Services.Interfaces;
+using AutoReparos.Cadastros.Application.Notificacoes;
+using AutoReparos.Cadastros.Application.Notificacoes.Interfaces;
 using AutoReparos.Cadastros.Application.Shared.Interfaces;
 using AutoReparos.Cadastros.Domain.Clientes.Repositories;
+using AutoReparos.Cadastros.Domain.Notificacoes.Repositories;
 using AutoReparos.Cadastros.Domain.Usuarios.Repositories;
 using AutoReparos.Cadastros.Domain.Veiculos.Repositories;
 using AutoReparos.Cadastros.Infrastructure.Data;
@@ -8,10 +12,12 @@ using AutoReparos.Cadastros.Infrastructure.Identity;
 using AutoReparos.Cadastros.Infrastructure.Identity.Models;
 using AutoReparos.Cadastros.Infrastructure.Identity.Services;
 using AutoReparos.Cadastros.Infrastructure.Repositories;
+using AutoReparos.Cadastros.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace AutoReparos.Cadastros.Infrastructure.IoC
 {
@@ -40,9 +46,29 @@ namespace AutoReparos.Cadastros.Infrastructure.IoC
             services.AddScoped<IClienteRepository, ClienteRepository>();
             services.AddScoped<IVeiculoRepository, VeiculoRepository>();
             services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+            services.AddScoped<INotificacaoEnviadaRepository, NotificacaoEnviadaRepository>();
             services.AddScoped<IAuthRepository, AuthRepository>();
             services.AddSingleton<ChaveAssinaturaJwt>();
             services.AddScoped<IJwtService, JwtService>();
+
+            services.AddSingleton(TimeProvider.System);
+            services.AddSingleton<IAtrasador, TaskAtrasador>();
+            services.AddScoped<IEmailSender, SendGridEmailSender>();
+            services.AddScoped<ProcessarEventoNotificacaoUseCase>();
+            services.AddScoped<ConsumirFilaNotificacoesUseCase>();
+
+            // O consumidor só sobe quando há fila configurada (Notificacoes:FilaUrl)
+            services.AddOptions<NotificacoesOptions>().BindConfiguration(NotificacoesOptions.SectionName);
+            services.AddSingleton<IAmazonSQS>(sp =>
+            {
+                var serviceUrl = sp.GetRequiredService<IOptions<NotificacoesOptions>>().Value.ServiceUrl;
+                return string.IsNullOrWhiteSpace(serviceUrl)
+                    ? new AmazonSQSClient()
+                    : new AmazonSQSClient(new AmazonSQSConfig { ServiceURL = serviceUrl });
+            });
+            services.AddScoped<IFilaNotificacoes, SqsFilaNotificacoes>();
+            services.AddScoped<IFilaMortaNotificacoes, SqsFilaMortaNotificacoes>();
+            services.AddHostedService<ConsumidorNotificacoesService>();
 
             return services;
         }

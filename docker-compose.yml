@@ -36,6 +36,9 @@ services:
       - Jwt__ExpiryHours=${JWT_EXPIRY_HOURS:-2}
       - SeedUser__Email=${SEED_USER_EMAIL:-admin@autoreparos.com}
       - SeedUser__Password=${SEED_USER_PASSWORD:-Admin@123}
+      - Notificacoes__FilaUrl=${NOTIFICACOES_FILA_URL:-}
+      - Notificacoes__DlqUrl=${NOTIFICACOES_DLQ_URL:-}
+      - Notificacoes__ServiceUrl=${NOTIFICACOES_SQS_SERVICE_URL:-}
       - SendGrid__ApiKey=${SENDGRID_API_KEY:-SG.dummy_key}
       - SendGrid__FromEmail=${SENDGRID_FROM_EMAIL:-noreply@autoreparos.com}
       - SendGrid__FromName=${SENDGRID_FROM_NAME:-AutoReparos}
