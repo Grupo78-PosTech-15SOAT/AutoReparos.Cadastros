@@ -1,4 +1,3 @@
-﻿using AutoReparos.Cadastros.Application.Shared.Metrics;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
@@ -56,7 +55,6 @@ namespace AutoReparos.Cadastros.Api
                 {
                     metrics
                         .SetResourceBuilder(resourceBuilder)
-                        .AddMeter(AutoReparosMetrics.MeterName)
                         // Meter do driver PostgreSQL: alimenta o painel de latência de banco
                         // do dashboard de erros e falhas de integração.
                         .AddMeter("Npgsql")

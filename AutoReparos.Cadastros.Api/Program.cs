@@ -73,10 +73,6 @@ app.MapAuthEndpoints();
 app.MapUsuariosEndpoints();
 app.MapClientesEndpoints();
 app.MapVeiculosEndpoints();
-app.MapServicosEndpoints();
-app.MapInsumosEndpoints();
-app.MapOrdemServicoEndpoints();
-app.MapDashboardEndpoints();
 
 app.MapHealthChecks("/health");
 

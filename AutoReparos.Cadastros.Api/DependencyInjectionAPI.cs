@@ -78,16 +78,9 @@ namespace AutoReparos.Cadastros.Api
             services.AddScoped<UsuarioController>();
             services.AddScoped<ClienteController>();
             services.AddScoped<VeiculoController>();
-            services.AddScoped<ServicoController>();
-            services.AddScoped<InsumoController>();
-            services.AddScoped<OrdemServicoController>();
-            services.AddScoped<OrdemServicoFluxoController>();
-            services.AddScoped<OrdemServicoAprovacaoController>();
-            services.AddScoped<DashboardController>();
             services.AddScoped<PortalClienteController>();
 
             services.AddHttpContextAccessor();
-            services.AddScoped<IAppUrlProvider, HttpAppUrlProvider>();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
 
             return services;

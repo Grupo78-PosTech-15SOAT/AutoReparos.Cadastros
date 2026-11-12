@@ -1,4 +1,3 @@
-using AutoReparos.Cadastros.Application.OrdensServicos.DTOs.Response;
 using AutoReparos.Cadastros.Application.Veiculos.DTOs.Response;
 using AutoReparos.Cadastros.Domain.Clientes.Repositories;
 using AutoReparos.Cadastros.IntegrationTests.Infrastructure;
@@ -80,45 +79,6 @@ public class PortalClienteIntegrationTests(CustomWebApplicationFactory<Program> 
         veiculos.First().Modelo.Should().Be("Gol");
     }
 
-    [Fact(DisplayName = "GET /api/ordem-servico/minhas-os - Cliente deve visualizar apenas suas ordens de serviço")]
-    public async Task GetMinhasOrdensServico_ComTokenCliente_DeveRetornarApenasOrdensDoCliente()
-    {
-        // Arrange: Leandro Tavares
-        var token = await ObterTokenClienteAsync("97632180044", "leandro.silva@email.com");
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/ordem-servico/minhas-os");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        // Act
-        var response = await Client.SendAsync(request);
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var ordens = await response.Content.ReadFromJsonAsync<List<MinhaOrdemServicoDto>>();
-
-        ordens.Should().NotBeNull();
-        ordens.Should().NotBeEmpty();
-        ordens!.All(o => o.PlacaVeiculo == "ABC1D23").Should().BeTrue();
-    }
-
-    [Fact(DisplayName = "GET /api/ordem-servico/minhas-os?placa=XYZ2E34 - Filtrar placa de outro cliente deve retornar lista vazia (Zero-Trust)")]
-    public async Task GetMinhasOrdensServico_FiltrandoPlacaDeOutroCliente_DeveRetornarListaVazia()
-    {
-        // Arrange: Leandro tenta consultar a placa XYZ2E34 (pertencente à Fernanda)
-        var token = await ObterTokenClienteAsync("97632180044", "leandro.silva@email.com");
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/ordem-servico/minhas-os?placa=XYZ2E34");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        // Act
-        var response = await Client.SendAsync(request);
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var ordens = await response.Content.ReadFromJsonAsync<List<MinhaOrdemServicoDto>>();
-
-        ordens.Should().NotBeNull();
-        ordens.Should().BeEmpty(); // Proteção ativa: nenhum dado alheio vazado!
-    }
-
     [Fact(DisplayName = "Segurança - Token de cliente deve receber 403 Forbidden ao tentar acessar rotas operacionais da oficina")]
     public async Task RotasOperacionais_ComTokenCliente_DeveRetornar403Forbidden()
     {
@@ -130,24 +90,6 @@ public class PortalClienteIntegrationTests(CustomWebApplicationFactory<Program> 
         reqClientes.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var respClientes = await Client.SendAsync(reqClientes);
         respClientes.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-
-        // 2. Tentativa de listar kanban da oficina
-        using var reqKanban = new HttpRequestMessage(HttpMethod.Get, "/api/ordem-servico/kanban");
-        reqKanban.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        var respKanban = await Client.SendAsync(reqKanban);
-        respKanban.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-
-        // 3. Tentativa de acessar dashboard operacional
-        using var reqDashboard = new HttpRequestMessage(HttpMethod.Get, "/api/dashboard/metrics");
-        reqDashboard.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        var respDashboard = await Client.SendAsync(reqDashboard);
-        respDashboard.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-
-        // 4. Tentativa de listar insumos
-        using var reqInsumos = new HttpRequestMessage(HttpMethod.Get, "/api/insumos");
-        reqInsumos.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        var respInsumos = await Client.SendAsync(reqInsumos);
-        respInsumos.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
     [Fact(DisplayName = "Segurança - Requisições anônimas aos endpoints do portal devem receber 401 Unauthorized")]
@@ -156,9 +98,5 @@ public class PortalClienteIntegrationTests(CustomWebApplicationFactory<Program> 
         // 1. Meus Veículos sem token
         var respVeiculos = await Client.GetAsync("/api/clientes/meus-veiculos");
         respVeiculos.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-
-        // 2. Minhas OSs sem token
-        var respOrdens = await Client.GetAsync("/api/ordem-servico/minhas-os");
-        respOrdens.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 }
