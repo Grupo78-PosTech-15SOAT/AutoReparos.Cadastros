@@ -61,7 +61,9 @@ namespace AutoReparos.Cadastros.IntegrationTests.Infrastructure
                 configBuilder.AddJsonFile(testConfigPath, optional: true);
                 configBuilder.AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["ConnectionStrings:DbConnection"] = ConnectionString
+                    ["ConnectionStrings:DbConnection"] = ConnectionString,
+                    // O runner de CI não tem região AWS: o cliente SQS precisa de um endpoint para ser construído
+                    ["Notificacoes:ServiceUrl"] = "http://localhost:4566"
                 });
             });
         }
