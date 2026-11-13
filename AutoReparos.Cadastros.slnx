@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="AutoReparos.Cadastros.Api/AutoReparos.Cadastros.Api.csproj" />
+  <Project Path="AutoReparos.Cadastros.Application/AutoReparos.Cadastros.Application.csproj" />
+  <Project Path="AutoReparos.Cadastros.Application.Tests/AutoReparos.Cadastros.Application.Tests.csproj" />
+  <Project Path="AutoReparos.Cadastros.Domain/AutoReparos.Cadastros.Domain.csproj" />
+  <Project Path="AutoReparos.Cadastros.Domain.Tests/AutoReparos.Cadastros.Domain.Tests.csproj" />
+  <Project Path="AutoReparos.Cadastros.Infrastructure/AutoReparos.Cadastros.Infrastructure.csproj" />
+  <Project Path="AutoReparos.Cadastros.IntegrationTests/AutoReparos.Cadastros.IntegrationTests.csproj" />
+</Solution>
