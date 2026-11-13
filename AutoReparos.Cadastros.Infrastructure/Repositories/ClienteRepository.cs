@@ -45,6 +45,11 @@ namespace AutoReparos.Cadastros.Infrastructure.Repositories
             return await _context.Clientes.FirstOrDefaultAsync(c => c.Documento.Valor == documento || c.Email.Endereco == email);
         }
 
+        public async Task<Cliente?> GetByDocumento(string documento)
+        {
+            return await _context.Clientes.FirstOrDefaultAsync(c => c.Documento.Valor == documento);
+        }
+
         public async Task<Cliente?> GetById(Guid id)
         {
             return await _context.Clientes.FindAsync(id);

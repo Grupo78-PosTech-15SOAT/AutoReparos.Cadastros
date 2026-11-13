@@ -1,15 +1,13 @@
-﻿using AutoReparos.Cadastros.Application.Auth.Services.Interfaces;
-using AutoReparos.Cadastros.Application.Dashboard.Services;
-using AutoReparos.Cadastros.Application.OrdensServicos.Services.Interfaces;
+﻿using Amazon.SQS;
+using AutoReparos.Cadastros.Application.Auth.Services.Interfaces;
+using AutoReparos.Cadastros.Application.Notificacoes;
+using AutoReparos.Cadastros.Application.Notificacoes.Interfaces;
 using AutoReparos.Cadastros.Application.Shared.Interfaces;
 using AutoReparos.Cadastros.Domain.Clientes.Repositories;
-using AutoReparos.Cadastros.Domain.Insumos.Repositories;
-using AutoReparos.Cadastros.Domain.OrdensServicos.Repositories;
-using AutoReparos.Cadastros.Domain.Servicos.Repositories;
+using AutoReparos.Cadastros.Domain.Notificacoes.Repositories;
 using AutoReparos.Cadastros.Domain.Usuarios.Repositories;
 using AutoReparos.Cadastros.Domain.Veiculos.Repositories;
 using AutoReparos.Cadastros.Infrastructure.Data;
-using AutoReparos.Cadastros.Infrastructure.Data.Interceptors;
 using AutoReparos.Cadastros.Infrastructure.Identity;
 using AutoReparos.Cadastros.Infrastructure.Identity.Models;
 using AutoReparos.Cadastros.Infrastructure.Identity.Services;
@@ -19,6 +17,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace AutoReparos.Cadastros.Infrastructure.IoC
 {
@@ -36,7 +35,6 @@ namespace AutoReparos.Cadastros.Infrastructure.IoC
                 var config = serviceProvider.GetRequiredService<IConfiguration>();
                 options.UseNpgsql(config.GetConnectionString("DbConnection"),
                     b => b.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName));
-                options.AddInterceptors(new OrdemServicoMetricsInterceptor());
             });
 
             services.AddIdentityCore<UsuarioIdentity>()
@@ -47,15 +45,30 @@ namespace AutoReparos.Cadastros.Infrastructure.IoC
 
             services.AddScoped<IClienteRepository, ClienteRepository>();
             services.AddScoped<IVeiculoRepository, VeiculoRepository>();
-            services.AddScoped<IServicoRepository, ServicoRepository>();
-            services.AddScoped<IInsumoRepository, InsumoRepository>();
-            services.AddScoped<IOrdemServicoRepository, OrdemServicoRepository>();
             services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+            services.AddScoped<INotificacaoEnviadaRepository, NotificacaoEnviadaRepository>();
             services.AddScoped<IAuthRepository, AuthRepository>();
+            services.AddSingleton<ChaveAssinaturaJwt>();
             services.AddScoped<IJwtService, JwtService>();
-            services.AddScoped<IAprovacaoTokenService, AprovacaoTokenService>();
-            services.AddScoped<INotificacaoService, NotificacaoService>();
-            services.AddScoped<IDashboardQueryService, DashboardQueryService>();
+
+            services.AddSingleton(TimeProvider.System);
+            services.AddSingleton<IAtrasador, TaskAtrasador>();
+            services.AddScoped<IEmailSender, SendGridEmailSender>();
+            services.AddScoped<ProcessarEventoNotificacaoUseCase>();
+            services.AddScoped<ConsumirFilaNotificacoesUseCase>();
+
+            // O consumidor só sobe quando há fila configurada (Notificacoes:FilaUrl)
+            services.AddOptions<NotificacoesOptions>().BindConfiguration(NotificacoesOptions.SectionName);
+            services.AddSingleton<IAmazonSQS>(sp =>
+            {
+                var serviceUrl = sp.GetRequiredService<IOptions<NotificacoesOptions>>().Value.ServiceUrl;
+                return string.IsNullOrWhiteSpace(serviceUrl)
+                    ? new AmazonSQSClient()
+                    : new AmazonSQSClient(new AmazonSQSConfig { ServiceURL = serviceUrl });
+            });
+            services.AddScoped<IFilaNotificacoes, SqsFilaNotificacoes>();
+            services.AddScoped<IFilaMortaNotificacoes, SqsFilaMortaNotificacoes>();
+            services.AddHostedService<ConsumidorNotificacoesService>();
 
             return services;
         }

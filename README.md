@@ -75,6 +75,33 @@ docker-compose down
 
 ---
 
+## 3.1 Autenticação: JWT RS256, JWKS e chave interna
+
+O Cadastros emite os tokens (usuários e clientes) com **RS256** e publica a chave pública em `GET /.well-known/openid-configuration` e `GET /.well-known/jwks.json`. OS, Cobrança e Execução validam o token por `Authority`, sem segredo compartilhado, e cacheiam o JWKS por 10 minutos.
+
+| Variável | Conteúdo |
+| --- | --- |
+| `Jwt__Issuer` | Emissor (`iss`) e `issuer` do discovery, por exemplo a URL pública do Cadastros |
+| `Jwt__ChavePrivadaPem` | Chave RSA privada em PEM (PKCS#8), vinda de um Secret do Kubernetes |
+| `Jwt__KeyId` | Opcional: o `kid` da chave ativa; sem ele, usa o thumbprint da chave pública |
+| `Interno__Chave` | Segredo de `X-Chave-Interna`, vindo de um Secret do Kubernetes |
+
+Gerar uma chave para desenvolvimento: `openssl genrsa 2048 | openssl pkcs8 -topk8 -nocrypt` e exportar o resultado em `JWT_CHAVE_PRIVADA_PEM`.
+
+**Rotação manual da chave** (há uma chave ativa por vez): gere uma chave nova, atualize o Secret `Jwt__ChavePrivadaPem` e reinicie o Cadastros. O `kid` muda junto com a chave. Os tokens emitidos com a chave anterior deixam de valer na hora, e os serviços passam a aceitar a chave nova assim que o cache do JWKS (10 minutos) expira. Combine a troca com um horário de baixo uso.
+
+**Rotas internas:** `POST /internal/clientes/autenticar` (CPF e e-mail; devolve o cliente e o JWT) só responde com `X-Chave-Interna` válido e deve ficar acessível apenas dentro do cluster (NetworkPolicy). `GET /api/v1/clientes/{id}` e `GET /api/v1/veiculos/{id}` aceitam o JWT de um usuário da oficina ou, sem usuário, a chave interna. `/api/v1/{clientes,veiculos,usuarios}` e `/api/...` são o mesmo contrato.
+
+## 3.2 Notificações por evento
+
+O Cadastros é dono do e-mail do cliente e consome a **sua própria fila SQS**, assinante dos tópicos SNS de orçamento, conclusão, pagamento e lembrete. Tipos que notificam: `orcamento.gerado.v1`, `orcamento.aprovado.v1`, `orcamento.recusado.v1`, `execucao.concluida.v1`, `pagamento.aprovado.v1`, `pagamento.recusado.v1` e `saga.lembrete.v1`; qualquer outro tipo é descartado sem e-mail.
+
+- **Contrato lido:** envelope com `eventId`, `tipo` e `clienteId` (no topo ou em `payload`; `ordemServicoId` ou `correlacaoId` identificam a OS). O invólucro de notificação do SNS também é aceito. **Os produtores precisam incluir `clienteId` no evento**, porque é por ele que o Cadastros descobre o e-mail.
+- **Uma vez por `eventId`:** o `eventId` é gravado em `NotificacoesEnviadas` somente depois que o e-mail sai; entregas repetidas da mesma mensagem não geram novo e-mail.
+- **Falha no envio:** repete com backoff exponencial (`Notificacoes__AtrasoBase`, dobrando a cada tentativa, até `Notificacoes__MaxTentativas`) e, ao esgotar, envia a mensagem para a DLQ própria (`Notificacoes__DlqUrl`). Corpo inválido ou cliente inexistente vão direto para a DLQ, sem repetir.
+- **Envio:** SendGrid (`SendGrid__ApiKey`, `SendGrid__FromEmail`, `SendGrid__FromName`).
+- **Ligar o consumidor:** defina `Notificacoes__FilaUrl`; sem ela o consumidor fica desligado. `Notificacoes__ServiceUrl` aponta para o LocalStack.
+
 ## 4. Execução Manual para Desenvolvimento
 
 ### Backend (.NET 10)

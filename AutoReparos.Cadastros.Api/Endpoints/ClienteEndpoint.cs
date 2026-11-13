@@ -25,6 +25,17 @@ namespace AutoReparos.Cadastros.Api.Endpoints
             .Produces<IEnumerable<VeiculoDto>>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized);
 
+            // Consulta por id: usuário autenticado ou chave interna (OS, sem usuário)
+            group.MapGet("/{id:guid}", (Guid id, ClienteController controller) => controller.GetById(id))
+            .WithName("GetClienteById")
+            .WithSummary("Busca cliente por Id")
+            .WithDescription("Endpoint responsável por retornar um cliente específico pelo seu id")
+            .RequireAuthorization("ConsultaCadastro")
+            .Produces<ClienteDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces(StatusCodes.Status404NotFound);
+
             // Rotas operacionais da oficina (acesso para Mecânico, Atendente, Admin)
             var operacaoGroup = group.MapGroup("/")
                 .RequireAuthorization("OperadorOficina");
@@ -41,13 +52,6 @@ namespace AutoReparos.Cadastros.Api.Endpoints
             .WithSummary("Lista todos os clientes")
             .WithDescription("Endpoint responsável por retornar todos os clientes ou filtrar por nome quando o parâmetro é informado")
             .Produces<PagedResult<ClienteDto>>(StatusCodes.Status200OK);
-
-            operacaoGroup.MapGet("/{id:guid}", (Guid id, ClienteController controller) => controller.GetById(id))
-            .WithName("GetClienteById")
-            .WithSummary("Busca cliente por Id")
-            .WithDescription("Endpoint responsável por retornar um cliente específico pelo seu id")
-            .Produces<ClienteDto>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status404NotFound);
 
             operacaoGroup.MapPut("/{id:guid}", (Guid id, ClienteUpdateDto dto, ClienteController controller) => controller.Update(id, dto))
             .WithName("UpdateCliente")

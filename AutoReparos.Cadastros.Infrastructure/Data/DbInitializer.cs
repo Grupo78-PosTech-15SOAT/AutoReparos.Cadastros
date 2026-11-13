@@ -1,12 +1,5 @@
-using AutoReparos.Cadastros.Domain.Clientes.Entities;
+﻿using AutoReparos.Cadastros.Domain.Clientes.Entities;
 using AutoReparos.Cadastros.Domain.Clientes.Repositories;
-using AutoReparos.Cadastros.Domain.Insumos.Entities;
-using AutoReparos.Cadastros.Domain.Insumos.Repositories;
-using AutoReparos.Cadastros.Domain.OrdensServicos.Entities;
-using AutoReparos.Cadastros.Domain.OrdensServicos.Enums;
-using AutoReparos.Cadastros.Domain.OrdensServicos.Repositories;
-using AutoReparos.Cadastros.Domain.Servicos.Entities;
-using AutoReparos.Cadastros.Domain.Servicos.Repositories;
 using AutoReparos.Cadastros.Domain.Usuarios.Entities;
 using AutoReparos.Cadastros.Domain.Usuarios.Enums;
 using AutoReparos.Cadastros.Domain.Usuarios.Repositories;
@@ -46,9 +39,6 @@ namespace AutoReparos.Cadastros.Infrastructure.Data
                 var usuarioRepository = services.GetRequiredService<IUsuarioRepository>();
                 var clienteRepository = services.GetRequiredService<IClienteRepository>();
                 var veiculoRepository = services.GetRequiredService<IVeiculoRepository>();
-                var insumoRepository = services.GetRequiredService<IInsumoRepository>();
-                var servicoRepository = services.GetRequiredService<IServicoRepository>();
-                var osRepository = services.GetRequiredService<IOrdemServicoRepository>();
                 var seedSettings = services.GetRequiredService<IOptions<SeedUsuarioSettings>>().Value;
                 var environment = services.GetRequiredService<IHostEnvironment>();
 
@@ -58,9 +48,6 @@ namespace AutoReparos.Cadastros.Infrastructure.Data
                 {
                     var clientes = await SeedClientesAsync(clienteRepository, logger);
                     var veiculos = await SeedVeiculosAsync(veiculoRepository, clientes, logger);
-                    var insumos = await SeedInsumosAsync(insumoRepository, logger);
-                    var servicos = await SeedServicosAsync(servicoRepository, logger);
-                    await SeedOrdensServicoAsync(osRepository, clientes, veiculos, servicos, insumos, logger);
                 }
             }
             catch (Exception ex)
@@ -160,103 +147,6 @@ namespace AutoReparos.Cadastros.Infrastructure.Data
 
             logger.LogInformation("{Count} veículos criados.", veiculos.Count);
             return veiculos;
-        }
-
-        private static async Task<List<Insumo>> SeedInsumosAsync(
-            IInsumoRepository insumoRepository,
-            ILogger logger)
-        {
-            var (_, total) = await insumoRepository.GetAll(null, 0, 1);
-            if (total > 0)
-            {
-                logger.LogInformation("Insumos já existem, pulando seed.");
-                var (existentes, _) = await insumoRepository.GetAll(null, 0, 3);
-                return existentes.ToList();
-            }
-
-            logger.LogInformation("Criando insumos de desenvolvimento...");
-
-            var insumos = new List<Insumo>
-            {
-                new("Óleo Motor 5W30", "Óleo sintético para motor", 45.90m, 20),
-                new("Filtro de Óleo", "Filtro compatível com modelos 1.0/1.4", 28.50m, 15),
-                new("Pastilha de Freio", "Pastilha dianteira para veículos populares", 89.90m, 10),
-            };
-
-            foreach (var insumo in insumos)
-                await insumoRepository.Create(insumo);
-
-            logger.LogInformation("{Count} insumos criados.", insumos.Count);
-            return insumos;
-        }
-
-        private static async Task<List<Servico>> SeedServicosAsync(
-            IServicoRepository servicoRepository,
-            ILogger logger)
-        {
-            var (_, total) = await servicoRepository.GetAll(null, 0, 1);
-            if (total > 0)
-            {
-                logger.LogInformation("Serviços já existem, pulando seed.");
-                var (existentes, _) = await servicoRepository.GetAll(null, 0, 3);
-                return existentes.ToList();
-            }
-
-            logger.LogInformation("Criando serviços de desenvolvimento...");
-
-            var servicos = new List<Servico>
-            {
-                new("Troca de Óleo", "Troca de óleo e filtro", 120.00m),
-                new("Revisão de Freios", "Inspeção e troca de pastilhas", 200.00m),
-                new("Alinhamento", "Alinhamento e balanceamento", 150.00m),
-            };
-
-            foreach (var servico in servicos)
-                await servicoRepository.Create(servico);
-
-            logger.LogInformation("{Count} serviços criados.", servicos.Count);
-            return servicos;
-        }
-
-        // OS1 com "EmExecucao", OS2 com "AguardandoAprovacao" e OS3 com "Recebida"
-        private static async Task SeedOrdensServicoAsync(
-            IOrdemServicoRepository osRepository,
-            List<Cliente> clientes,
-            List<Veiculo> veiculos,
-            List<Servico> servicos,
-            List<Insumo> insumos,
-            ILogger logger)
-        {
-            var (_, total) = await osRepository.GetAll(null, null, null, 0, 1);
-            if (total > 0)
-            {
-                logger.LogInformation("Ordens de Serviço já existem, pulando seed.");
-                return;
-            }
-
-            logger.LogInformation("Criando Ordens de Serviço de desenvolvimento...");
-
-            const string seedUser = "seed-admin";
-
-            var os1 = new OrdemServico(clientes[0].Id, veiculos[0].Id, "Troca de óleo e revisão de freios");
-            os1.AdicionarServico(new OrdemServicoServico(os1.Id, servicos[0].Id, servicos[0].ValorTabelado!.Value));
-            os1.AdicionarInsumo(new OrdemServicoInsumo(os1.Id, insumos[0].Id, insumos[0].Nome, insumos[0].Valor, 1, EOrigemInsumo.Estoque));
-            os1.IniciarDiagnostico(seedUser);
-            os1.AguardarAprovacao(seedUser);
-            os1.Aprovar();
-            await osRepository.Create(os1);
-
-            var os2 = new OrdemServico(clientes[1].Id, veiculos[1].Id, "Revisão completa de freios");
-            os2.AdicionarServico(new OrdemServicoServico(os2.Id, servicos[1].Id, servicos[1].ValorTabelado!.Value));
-            os2.AdicionarInsumo(new OrdemServicoInsumo(os2.Id, insumos[2].Id, insumos[2].Nome, insumos[2].Valor, 2, EOrigemInsumo.Estoque));
-            os2.IniciarDiagnostico(seedUser);
-            os2.AguardarAprovacao(seedUser);
-            await osRepository.Create(os2);
-
-            var os3 = new OrdemServico(clientes[2].Id, veiculos[2].Id, "Verificar alinhamento e balanceamento");
-            await osRepository.Create(os3);
-
-            logger.LogInformation("3 Ordens de Serviço criadas (EmExecucao, AguardandoAprovacao, Recebida).");
         }
     }
 }
