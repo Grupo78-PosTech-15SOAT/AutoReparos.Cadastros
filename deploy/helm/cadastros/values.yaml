@@ -18,6 +18,7 @@ database:
 
 config:
   jwtExpiryHours: "2"
+  jwtAudience: "autoreparos"  # aud do JWT; igual a autenticacao.audiencia de OS, Cobrança e Execução (D-57)
   jwtIssuer: ""  # URL pública do API Gateway (iss do JWT e issuer do discovery OIDC)
   seedUserEmail: "admin@autoreparos.com"
   sendGridFromEmail: "noreply@autoreparos.com"

@@ -7,6 +7,7 @@ metadata:
 data:
   Jwt__ExpiryHours: {{ .Values.config.jwtExpiryHours | quote }}
   Jwt__Issuer: {{ .Values.config.jwtIssuer | quote }}
+  Jwt__Audience: {{ .Values.config.jwtAudience | quote }}
   Notificacoes__FilaUrl: {{ include "servico.fila" (list . .Values.filas.notificacoes) | quote }}
   Notificacoes__DlqUrl: {{ include "servico.fila" (list . .Values.filas.notificacoesDlq) | quote }}
   SeedUser__Email: {{ .Values.config.seedUserEmail | quote }}

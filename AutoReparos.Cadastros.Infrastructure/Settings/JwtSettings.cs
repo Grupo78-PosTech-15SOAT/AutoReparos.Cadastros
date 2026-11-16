@@ -22,5 +22,10 @@ public class JwtSettings
     /// </summary>
     public string KeyId { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Audiência (<c>aud</c>) dos tokens; OS, Cobrança e Execução exigem o mesmo valor em <c>Authentication:Audience</c> (D-57).
+    /// </summary>
+    public string Audience { get; set; } = "autoreparos";
+
     public int ExpiryHours { get; set; } = 2;
 }
