@@ -1,0 +1,61 @@
+# Valores do chart do Cadastros. O job deploy informa image.*, aws.conta, serviceAccount.roleArn, config.jwtIssuer,
+# os dados do usuário inicial e do SendGrid e networkPolicy.allowedCidrs.
+
+image:
+  repository: ""  # URL do ECR autoreparos-cadastros (output ecr_url do Terraform)
+  tag: ""         # SHA do commit
+  pullPolicy: IfNotPresent
+
+aws:
+  conta: ""
+  regiao: us-east-1
+
+serviceAccount:
+  roleArn: ""  # role IRSA autoreparos-cadastros-irsa (output irsa_role_arn do Terraform)
+
+database:
+  variavel: ConnectionStrings__DbConnection  # chave do Secret cadastros-database
+
+config:
+  jwtExpiryHours: "2"
+  jwtIssuer: ""  # URL pública do API Gateway (iss do JWT e issuer do discovery OIDC)
+  seedUserEmail: "admin@autoreparos.com"
+  sendGridFromEmail: "noreply@autoreparos.com"
+  sendGridFromName: "AutoReparos"
+
+telemetria:
+  nomeServico: autoreparos-api
+  otlpEndpoint: http://autoreparos-otel-collector.autoreparos.svc.cluster.local:4317
+
+# Nomes das filas (a fila pertence ao consumidor e é criada pelo Terraform dele).
+filas:
+  notificacoes: autoreparos-cadastros-notificacoes  # saga.lembrete.v1 publicado pelo OS
+  notificacoesDlq: autoreparos-cadastros-notificacoes-dlq
+
+networkPolicy:
+  enabled: true
+  # Origens autorizadas a chegar nos pods do Cadastros (negação por padrão para o resto)
+  ingressNamespaces: ["kube-system", "ingress-nginx", "autoreparos", "os", "cobranca", "execucao"]
+  allowedCidrs: []  # CIDRs das sub-redes privadas (output cidrs_privados do Terraform)
+
+ingress:
+  ordem: 100
+  prefixos:
+    - /api
+    - /.well-known
+    - /health
+
+hpa:
+  cpu: 80
+
+migracao:
+  prazoSegundos: 600
+
+# Dois nós t3.medium dividem os quatro serviços, o Web e a observabilidade.
+resources:
+  requests:
+    cpu: 50m
+    memory: 192Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

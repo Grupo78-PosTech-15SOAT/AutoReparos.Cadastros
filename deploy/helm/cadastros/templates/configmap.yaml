@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "servico.nome" . }}-config
+  labels:
+    {{- include "servico.rotulos" . | nindent 4 }}
+data:
+  Jwt__ExpiryHours: {{ .Values.config.jwtExpiryHours | quote }}
+  Jwt__Issuer: {{ .Values.config.jwtIssuer | quote }}
+  Notificacoes__FilaUrl: {{ include "servico.fila" (list . .Values.filas.notificacoes) | quote }}
+  Notificacoes__DlqUrl: {{ include "servico.fila" (list . .Values.filas.notificacoesDlq) | quote }}
+  SeedUser__Email: {{ .Values.config.seedUserEmail | quote }}
+  SendGrid__FromEmail: {{ .Values.config.sendGridFromEmail | quote }}
+  SendGrid__FromName: {{ .Values.config.sendGridFromName | quote }}
