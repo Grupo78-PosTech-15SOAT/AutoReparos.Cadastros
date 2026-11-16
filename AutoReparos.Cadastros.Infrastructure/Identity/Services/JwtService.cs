@@ -34,6 +34,7 @@ public class JwtService(IOptions<JwtSettings> jwtOptions, ChaveAssinaturaJwt cha
         [
             new Claim(ClaimTypes.NameIdentifier, cliente.Id.ToString()),
             new Claim("sub", cliente.Id.ToString()),
+            new Claim("clienteId", cliente.Id.ToString()),
             new Claim(ClaimTypes.Name, cliente.Nome),
             new Claim(ClaimTypes.Email, cliente.Email.Endereco),
             new Claim("cpf", cliente.Documento.Valor),
