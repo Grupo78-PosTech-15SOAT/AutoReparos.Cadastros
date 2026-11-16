@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using AutoReparos.Cadastros.Application.Notificacoes.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -47,6 +48,16 @@ namespace AutoReparos.Cadastros.Application.Notificacoes
 
         private async Task ProcessarMensagemAsync(MensagemFila mensagem, CancellationToken cancellationToken)
         {
+            var metadados = ContextoTrace.LerMetadados(mensagem.Corpo);
+
+            // Sem contexto válido no envelope o span é raiz: nenhuma atividade do ambiente vira pai.
+            Activity.Current = null;
+            using var atividade = ContextoTrace.Fonte.StartActivity(
+                $"processar {metadados.Tipo}", ActivityKind.Consumer, metadados.Pai ?? default);
+            atividade?.SetTag("messaging.message.id", metadados.EventId ?? mensagem.Id);
+            if (metadados.OrdemServicoId is not null)
+                atividade?.SetTag("ordem_servico.id", metadados.OrdemServicoId);
+
             var opcoes = options.Value;
             var maximo = Math.Max(1, opcoes.MaxTentativas);
             Exception? ultima = null;
@@ -74,6 +85,7 @@ namespace AutoReparos.Cadastros.Application.Notificacoes
                 }
             }
 
+            atividade?.SetStatus(ActivityStatusCode.Error, "mensagem enviada para a DLQ");
             logger.LogError(ultima, "Mensagem {MensagemId} enviada para a DLQ.", mensagem.Id);
             await dlq.EnviarAsync(mensagem, ultima?.Message ?? "falha desconhecida", cancellationToken);
             await fila.ExcluirAsync(mensagem, cancellationToken);
