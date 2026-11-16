@@ -1,27 +1,26 @@
-# AutoReparos.App - Aplicação Principal (API, Frontend & Domínio)
+# AutoReparos.Cadastros - Backend (API e Domínio)
 
 > **Projeto:** AutoReparos - Sistema Integrado de Oficina Mecânica  
 > **Fase:** Fase 3 Tech Challenge (13SOAT / 15SOAT FIAP)  
-> **Componente:** Repositório 4/4 da Arquitetura Multi-Repo  
-> **Stack:** C# .NET 10, ASP.NET Core Minimal APIs, Entity Framework Core, PostgreSQL 16, Angular 19 (Signals & Standalone), OpenTelemetry, Docker.  
-> **Repositório Oficial:** [Grupo78-PosTech-15SOAT/AutoReparos.App](https://github.com/Grupo78-PosTech-15SOAT/AutoReparos.App)
+> **Componente:** Serviço de Cadastros da arquitetura multi-repositório
+> **Stack:** C# .NET 10, ASP.NET Core Minimal APIs, Entity Framework Core, PostgreSQL 16, OpenTelemetry, Docker.
+> **Repositório Oficial:** [Grupo78-PosTech-15SOAT/AutoReparos.Cadastros](https://github.com/Grupo78-PosTech-15SOAT/AutoReparos.Cadastros)
 
 ---
 
 ## 1. Visão Geral
 
-O **AutoReparos.App** é o repositório central contendo toda a lógica de negócio, APIs REST, persistência de dados e aplicação web de interface com o usuário da oficina mecânica:
+O **AutoReparos.Cadastros** contém as APIs REST, regras de negócio e persistência do backend. A aplicação Angular da oficina foi extraída para o repositório [AutoReparos.Web](https://github.com/Grupo78-PosTech-15SOAT/AutoReparos.Web), com branch de desenvolvimento e pipeline próprios.
 
 | Projeto | Camada / Descrição |
 |---|---|
-| `AutoReparos.Domain` | Entidades puras, Value Objects, Enums, regras de negócio e interfaces de repositório (DDD) |
-| `AutoReparos.Application` | Casos de uso, DTOs, orquestração de serviços de aplicação e validação |
-| `AutoReparos.Infra` | `AppDbContext` EF Core, repositórios PostgreSQL, Identity, geração de JWT e integrações |
-| `AutoReparos.API` | Endpoints Minimal APIs, Swagger, injeção de dependência e OpenTelemetry |
-| `AutoReparos.Web` | Frontend moderno em Angular 19 com Standalone Components e Angular Signals |
-| `AutoReparos.Domain.Tests` | 113 testes unitários de regras de domínio (xUnit + FluentAssertions) |
-| `AutoReparos.Application.Tests` | 134 testes unitários de casos de uso e métricas (xUnit + NSubstitute + FluentAssertions) |
-| `AutoReparos.IntegrationTests` | 67 testes de integração ponta a ponta com **Testcontainers PostgreSQL** |
+| `AutoReparos.Cadastros.Domain` | Entidades puras, Value Objects, Enums, regras de negócio e interfaces de repositório (DDD) |
+| `AutoReparos.Cadastros.Application` | Casos de uso, DTOs, orquestração de serviços de aplicação e validação |
+| `AutoReparos.Cadastros.Infrastructure` | `AppDbContext` EF Core, repositórios PostgreSQL, Identity, geração de JWT e integrações |
+| `AutoReparos.Cadastros.Api` | Endpoints Minimal APIs, Swagger, injeção de dependência e OpenTelemetry |
+| `AutoReparos.Cadastros.Domain.Tests` | 113 testes unitários de regras de domínio (xUnit + FluentAssertions) |
+| `AutoReparos.Cadastros.Application.Tests` | 151 testes unitários de casos de uso e métricas (xUnit + NSubstitute + FluentAssertions) |
+| `AutoReparos.Cadastros.IntegrationTests` | 78 testes de integração ponta a ponta com **Testcontainers PostgreSQL** |
 
 ---
 
@@ -30,34 +29,31 @@ O **AutoReparos.App** é o repositório central contendo toda a lógica de negó
 A aplicação segue rigorosamente os princípios de **Clean Architecture** e **Vertical Slice**:
 
 ```
-AutoReparos.App/
-├── AutoReparos.Domain/             # Núcleo de regras de negócio sem dependências externas
-├── AutoReparos.Application/        # Orquestração de Use Cases e DTOs
-├── AutoReparos.Infra/              # Entity Framework Core, PostgreSQL e Identity
-├── AutoReparos.API/                # Minimal APIs, middlewares e Dockerfile
+AutoReparos.Cadastros/
+├── AutoReparos.Cadastros.Domain/             # Núcleo de regras de negócio sem dependências externas
+├── AutoReparos.Cadastros.Application/        # Orquestração de Use Cases e DTOs
+├── AutoReparos.Cadastros.Infrastructure/              # Entity Framework Core, PostgreSQL e Identity
+├── AutoReparos.Cadastros.Api/                # Minimal APIs, middlewares e Dockerfile
 │   └── Dockerfile                  # Multi-stage build .NET 10 SDK & ASP.NET Runtime
-├── AutoReparos.Web/                # Frontend Angular 19 (Signals & Standalone)
-│   ├── Dockerfile                  # Multi-stage build Node.js 22 + Nginx unprivileged
-│   └── nginx.conf                  # Configuração SPA na porta 8080
-├── AutoReparos.Domain.Tests/       # Suíte de testes unitários do Domínio
-├── AutoReparos.Application.Tests/  # Suíte de testes unitários da Aplicação
-├── AutoReparos.IntegrationTests/   # Testes de integração com Testcontainers
+├── AutoReparos.Cadastros.Domain.Tests/       # Suíte de testes unitários do Domínio
+├── AutoReparos.Cadastros.Application.Tests/  # Suíte de testes unitários da Aplicação
+├── AutoReparos.Cadastros.IntegrationTests/   # Testes de integração com Testcontainers
 ├── docker/                         # Configurações de containers e observabilidade
 │   ├── servers.json                # Pré-configuração do pgAdmin 4
 │   └── observability/              # OpenTelemetry Collector, Prometheus, Loki e Grafana
-├── docker-compose.yml              # Orquestração completa local (API + Web + DB + Otel)
-├── .github/workflows/ci.yml        # Pipeline CI/CD GitHub Actions
-└── AutoReparos.App.slnx            # Solution .NET 10
+├── docker-compose.yml              # Orquestração local (API + DB + Otel)
+├── .github/workflows/ci-cd.yml     # Pipeline CI/CD GitHub Actions
+└── AutoReparos.Cadastros.slnx            # Solution .NET 10
 ```
 
 ---
 
 ## 3. Execução Local com Docker Compose
 
-O repositório disponibiliza um ambiente completo pronto para execução local via Docker Compose:
+O repositório disponibiliza API, banco e observabilidade para execução local via Docker Compose. O frontend é executado a partir de `AutoReparos.Web` ou do Compose do repositório pai.
 
 ```bash
-# Subir toda a aplicação (PostgreSQL, API, Web, pgAdmin e Stack de Observabilidade)
+# Subir PostgreSQL, API, pgAdmin e Stack de Observabilidade
 docker-compose up -d --build
 ```
 
@@ -66,7 +62,6 @@ docker-compose up -d --build
 | Serviço | Container | URL de Acesso | Credenciais Padrão |
 |---|---|---|---|
 | **API REST & Swagger** | `autoreparos-app-api` | [http://localhost:8080/swagger](http://localhost:8080/swagger) | — |
-| **Frontend Web** | `autoreparos-app-web` | [http://localhost:4200](http://localhost:4200) | — |
 | **pgAdmin 4** | `autoreparos-app-pgadmin` | [http://localhost:5050](http://localhost:5050) | `admin@autoreparos.com` / `Admin@123` |
 | **Grafana** | `autoreparos-app-grafana` | [http://localhost:3000](http://localhost:3000) | `admin` / `admin` |
 | **Jaeger Traces** | `autoreparos-app-jaeger` | [http://localhost:16686](http://localhost:16686) | — |
@@ -80,62 +75,94 @@ docker-compose down
 
 ---
 
+## 3.1 Autenticação: JWT RS256, JWKS e chave interna
+
+O Cadastros emite os tokens (usuários e clientes) com **RS256** e publica a chave pública em `GET /.well-known/openid-configuration` e `GET /.well-known/jwks.json`. OS, Cobrança e Execução validam o token por `Authority`, sem segredo compartilhado, e cacheiam o JWKS por 10 minutos.
+
+| Variável | Conteúdo |
+| --- | --- |
+| `Jwt__Issuer` | Emissor (`iss`) e `issuer` do discovery, por exemplo a URL pública do Cadastros |
+| `Jwt__ChavePrivadaPem` | Chave RSA privada em PEM (PKCS#8), vinda de um Secret do Kubernetes |
+| `Jwt__KeyId` | Opcional: o `kid` da chave ativa; sem ele, usa o thumbprint da chave pública |
+| `Interno__Chave` | Segredo de `X-Chave-Interna`, vindo de um Secret do Kubernetes |
+
+Gerar uma chave para desenvolvimento: `openssl genrsa 2048 | openssl pkcs8 -topk8 -nocrypt` e exportar o resultado em `JWT_CHAVE_PRIVADA_PEM`.
+
+**Rotação manual da chave** (há uma chave ativa por vez): gere uma chave nova, atualize o Secret `Jwt__ChavePrivadaPem` e reinicie o Cadastros. O `kid` muda junto com a chave. Os tokens emitidos com a chave anterior deixam de valer na hora, e os serviços passam a aceitar a chave nova assim que o cache do JWKS (10 minutos) expira. Combine a troca com um horário de baixo uso.
+
+**Rotas internas:** `POST /internal/clientes/autenticar` (CPF e e-mail; devolve o cliente e o JWT) só responde com `X-Chave-Interna` válido e deve ficar acessível apenas dentro do cluster (NetworkPolicy). `GET /api/v1/clientes/{id}` e `GET /api/v1/veiculos/{id}` aceitam o JWT de um usuário da oficina ou, sem usuário, a chave interna. `/api/v1/{clientes,veiculos,usuarios}` e `/api/...` são o mesmo contrato.
+
+## 3.2 Notificações por evento
+
+O Cadastros é dono do e-mail do cliente e consome a **sua própria fila SQS**, assinante dos tópicos SNS de orçamento, conclusão, pagamento e lembrete. Tipos que notificam: `orcamento.gerado.v1`, `orcamento.aprovado.v1`, `orcamento.recusado.v1`, `execucao.concluida.v1`, `pagamento.aprovado.v1`, `pagamento.recusado.v1` e `saga.lembrete.v1`; qualquer outro tipo é descartado sem e-mail.
+
+- **Contrato lido:** envelope com `eventId`, `tipo` e `clienteId` (no topo ou em `payload`; `ordemServicoId` ou `correlacaoId` identificam a OS). O invólucro de notificação do SNS também é aceito. **Os produtores precisam incluir `clienteId` no evento**, porque é por ele que o Cadastros descobre o e-mail.
+- **Uma vez por `eventId`:** o `eventId` é gravado em `NotificacoesEnviadas` somente depois que o e-mail sai; entregas repetidas da mesma mensagem não geram novo e-mail.
+- **Falha no envio:** repete com backoff exponencial (`Notificacoes__AtrasoBase`, dobrando a cada tentativa, até `Notificacoes__MaxTentativas`) e, ao esgotar, envia a mensagem para a DLQ própria (`Notificacoes__DlqUrl`). Corpo inválido ou cliente inexistente vão direto para a DLQ, sem repetir.
+- **Envio:** SendGrid (`SendGrid__ApiKey`, `SendGrid__FromEmail`, `SendGrid__FromName`).
+- **Ligar o consumidor:** defina `Notificacoes__FilaUrl`; sem ela o consumidor fica desligado. `Notificacoes__ServiceUrl` aponta para o LocalStack.
+
 ## 4. Execução Manual para Desenvolvimento
 
 ### Backend (.NET 10)
 ```bash
 # Restaurar e compilar a solution
-dotnet build AutoReparos.App.slnx
+dotnet build AutoReparos.Cadastros.slnx
 
 # Executar a API localmente
-dotnet run --project AutoReparos.API/AutoReparos.API.csproj
+dotnet run --project AutoReparos.Cadastros.Api/AutoReparos.Cadastros.Api.csproj
 ```
 
-### Frontend (Angular 19)
-```bash
-cd AutoReparos.Web
-yarn install
-yarn start
-```
+Para desenvolver o frontend, use a branch `develop` do repositório [AutoReparos.Web](https://github.com/Grupo78-PosTech-15SOAT/AutoReparos.Web).
 
 ---
 
-## 5. Suíte de Testes Automatizados (303 Testes)
+## 5. Suíte de Testes Automatizados
 
-A aplicação conta com 303 testes automatizados (100% de aprovação):
+Execute as suítes do backend pela solution:
 
 ```bash
 # Executar todos os testes
-dotnet test AutoReparos.App.slnx
+dotnet test AutoReparos.Cadastros.slnx
 
 # Executar testes unitários de Domínio (113 testes)
-dotnet test AutoReparos.Domain.Tests/AutoReparos.Domain.Tests.csproj
+dotnet test AutoReparos.Cadastros.Domain.Tests/AutoReparos.Cadastros.Domain.Tests.csproj
 
-# Executar testes unitários de Aplicação (123 testes)
-dotnet test AutoReparos.Application.Tests/AutoReparos.Application.Tests.csproj
+# Executar testes unitários de Aplicação (151 testes)
+dotnet test AutoReparos.Cadastros.Application.Tests/AutoReparos.Cadastros.Application.Tests.csproj
 
-# Executar testes de integração com Testcontainers (67 testes)
-dotnet test AutoReparos.IntegrationTests/AutoReparos.IntegrationTests.csproj
-
-# Executar testes unitários do Frontend Web
-cd AutoReparos.Web && yarn test --watch=false
+# Executar testes de integração com Testcontainers (78 testes)
+dotnet test AutoReparos.Cadastros.IntegrationTests/AutoReparos.Cadastros.IntegrationTests.csproj
 ```
 
 ---
 
 ## 6. Pipeline de CI/CD
 
-O workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) executa a validação paralela:
-1. **Backend:** Compilação .NET 10, testes unitários de domínio e aplicação, testes de integração com PostgreSQL e build da imagem Docker.
-2. **Frontend:** Instalação via Yarn (`--frozen-lockfile`), compilação de produção do Angular e testes unitários.
-- Todas as GitHub Actions são fixadas em hashes SHA de 40 caracteres conforme os padrões de segurança do SonarCloud.
+O workflow [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml) compila e testa a solution .NET, confere a cobertura mínima e executa o quality gate do SonarCloud. A compilação e os testes Angular pertencem ao pipeline de `AutoReparos.Web`.
 
 ---
 
 ## 7. Integração com o Repositório Pai
 
-Este repositório é registrado como **git submodule** no [repositório pai AutoReparos](https://github.com/Grupo78-PosTech-15SOAT/AutoReparos) no caminho `submodules/AutoReparos.App/`.
+Este repositório é registrado como **git submodule** no [repositório pai AutoReparos](https://github.com/Grupo78-PosTech-15SOAT/AutoReparos) no caminho `submodules/AutoReparos.Cadastros/`.
 
 ### Migrations de produção
 
 O startup da API continua fazendo migrations por padrão em desenvolvimento. Em produção, `Database__SkipStartupMigration=true` impede que cada réplica execute migrations concorrentes. O workflow do repositório pai cria a migration Job com `Database__RunMigrations=true`, aguarda conclusão e só então instala/atualiza a release Helm. A connection string chega pelo secret Kubernetes criado em runtime a partir do Secrets Manager; ela não deve ser gravada em `values.yaml` nem em artifacts.
+
+## 8. CI/CD e configuração do repositório
+
+O pipeline `.github/workflows/ci-cd.yml` roda em pull request para `main` e `develop` e em push nessas branches, com os jobs `build` (compila e confere `dotnet format`), `test` (testes da solution, cobertura mínima de linhas de 80%) e `quality` (SonarCloud).
+
+Para o job `quality` passar, o repositório precisa destes itens em **Settings → Secrets and variables → Actions**:
+
+| Nome | Onde criar | Obrigatório | Valor |
+| --- | --- | --- | --- |
+| `SONAR_TOKEN` | aba **Secrets** (do repositório ou da organização, com acesso a este repositório) | sim: sem ele o job `quality` falha de propósito | token gerado no SonarCloud em *My Account → Security*, por quem pode analisar os projetos da organização |
+| `SONAR_ORGANIZATION` | aba **Variables** | não | padrão `grupo78-postech-15soat` |
+| `SONAR_PROJECT_KEY` | aba **Variables** | não | padrão `Grupo78-PosTech-15SOAT_AutoReparos.Cadastros` |
+
+O projeto `Grupo78-PosTech-15SOAT_AutoReparos.Cadastros` precisa existir no SonarCloud (ou o token precisa poder criá-lo). Nunca versione o token. Depois de criar o secret, reexecute o job `quality` da última execução; não é preciso novo commit.
+
+Quando a proteção da `main` for aplicada (AD-026 do repositório pai), os jobs `build`, `test` e `quality` serão os status checks obrigatórios.

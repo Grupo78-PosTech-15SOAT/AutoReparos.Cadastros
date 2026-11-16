@@ -1,0 +1,96 @@
+using AutoReparos.Cadastros.Api;
+using AutoReparos.Cadastros.Api.Endpoints;
+using AutoReparos.Cadastros.Api.Middlewares;
+using AutoReparos.Cadastros.Application;
+using AutoReparos.Cadastros.Infrastructure.Data;
+using AutoReparos.Cadastros.Infrastructure.Identity.Services;
+using AutoReparos.Cadastros.Infrastructure.IoC;
+using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Logs estruturados em JSON com correlacao de TraceId/SpanId.
+// Precisa vir ANTES de AddOpenTelemetryObservability, que registra o provider OTel
+// em builder.Logging - um ClearProviders() posterior descartaria o exportador OTLP.
+builder.Logging.ClearProviders();
+builder.Logging.Configure(options =>
+{
+    options.ActivityTrackingOptions = ActivityTrackingOptions.TraceId
+        | ActivityTrackingOptions.SpanId
+        | ActivityTrackingOptions.ParentId;
+});
+builder.Logging.AddJsonConsole(options =>
+{
+    options.IncludeScopes = true;
+    options.TimestampFormat = "yyyy-MM-ddTHH:mm:ss.fffZ ";
+    options.UseUtcTimestamp = true;
+    options.JsonWriterOptions = new JsonWriterOptions { Indented = false };
+});
+
+builder.Services.AddAPI(builder.Configuration);
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddInfraestructureSwagger();
+
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure();
+builder.Services.AddHealthChecks();
+builder.Services.AddOpenTelemetryObservability(builder.Configuration, builder.Logging);
+
+var app = builder.Build();
+
+if (app.Configuration.GetValue<bool>("Database:RunMigrations"))
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+    return;
+}
+
+// Falha na subida (e não na primeira requisição) se a chave RS256 estiver ausente ou inválida.
+// Fica depois do ramo de migrações: o Job de migração não precisa da chave de assinatura.
+_ = app.Services.GetRequiredService<ChaveAssinaturaJwt>();
+
+await DbInitializer.SeedDataAsync(
+    app.Services,
+    skipMigration: app.Configuration.GetValue<bool>("Database:SkipStartupMigration"));
+
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "AutoReparos API v1"));
+
+// /api/v1/{clientes,veiculos,usuarios} é o mesmo contrato do prefixo /api (D-28)
+app.Use((context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api/v1", out var resto))
+        context.Request.Path = new PathString("/api").Add(resto);
+    return next();
+});
+
+app.UseMiddleware<CorrelationIdMiddleware>();
+
+app.UseExceptionHandler();
+
+app.UseRouting();
+
+app.UseCors("AllowFrontend");
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapOidcEndpoints();
+app.MapInternoEndpoints();
+app.MapAuthEndpoints();
+app.MapUsuariosEndpoints();
+app.MapClientesEndpoints();
+app.MapVeiculosEndpoints();
+
+app.MapHealthChecks("/health");
+
+app.Run();

@@ -176,7 +176,7 @@
             "uid": "Loki"
           },
           "editorMode": "code",
-          "expr": "{service_name=\"AutoReparos.API\"}",
+          "expr": "{service_name=\"AutoReparos.Cadastros.Api\"}",
           "refId": "A"
         }
       ]

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: cadastros
+description: Chart do serviço de Cadastros do AutoReparos (porte do subchart api do Infra.K8s), implantado pelo job deploy do próprio repositório
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
