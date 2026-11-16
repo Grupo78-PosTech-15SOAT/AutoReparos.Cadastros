@@ -6,6 +6,11 @@ on:
   push:
     branches: [main, develop]
   workflow_dispatch:
+    inputs:
+      ignorar_quality:
+        description: Implantar mesmo com o quality vermelho (uso manual; build e test continuam obrigatórios e o Environment production pede aprovação)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -99,7 +104,9 @@ jobs:
   # Helm com --atomic (o hook migra antes do rollout) -> rollout e GET /health.
   deploy:
     needs: [build, test, quality]
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    # Push na main: só com build, test e quality verdes. Disparo manual na main com ignorar_quality: aceita o quality
+    # vermelho (SonarCloud com Automatic Analysis ligada recusa a análise do CI), mas nunca build ou test vermelhos.
+    if: always() && github.ref == 'refs/heads/main' && needs.build.result == 'success' && needs.test.result == 'success' && (needs.quality.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.ignorar_quality))
     runs-on: ubuntu-latest
     environment: production
     permissions:
