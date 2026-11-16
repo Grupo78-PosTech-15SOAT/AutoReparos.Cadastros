@@ -47,6 +47,7 @@ public class JwtService(IOptions<JwtSettings> jwtOptions, ChaveAssinaturaJwt cha
         {
             Subject = new ClaimsIdentity(claims),
             Issuer = chave.Issuer,
+            Audience = string.IsNullOrWhiteSpace(_jwtSettings.Audience) ? "autoreparos" : _jwtSettings.Audience,
             Expires = DateTime.UtcNow.AddHours(_jwtSettings.ExpiryHours),
             SigningCredentials = new SigningCredentials(chave.ChavePrivada, SecurityAlgorithms.RsaSha256)
         };
