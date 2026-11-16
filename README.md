@@ -46,6 +46,10 @@ AutoReparos.Cadastros/
 └── AutoReparos.Cadastros.slnx            # Solution .NET 10
 ```
 
+### Papel, banco e mensageria
+
+O Cadastros é o dono de clientes, veículos e usuários (Identity), emite o JWT (RS256) e publica o JWKS; OS, Cobrança e Execução só validam o token. O banco é PostgreSQL próprio (`cadastros_db`), sem leitura cruzada: os demais serviços consultam por REST (por exemplo `GET /api/clientes/{id}`) e o login de cliente por CPF chega pela rota interna `POST /internal/clientes/autenticar`. Não participa da Saga: apenas consome, em fila SQS própria assinante dos tópicos SNS, os eventos que geram e-mail ao cliente (seção 3.2), com DLQ própria, e não publica eventos.
+
 ---
 
 ## 3. Execução Local com Docker Compose
@@ -166,3 +170,9 @@ Para o job `quality` passar, o repositório precisa destes itens em **Settings �
 O projeto `Grupo78-PosTech-15SOAT_AutoReparos.Cadastros` precisa existir no SonarCloud (ou o token precisa poder criá-lo). Nunca versione o token. Depois de criar o secret, reexecute o job `quality` da última execução; não é preciso novo commit.
 
 Quando a proteção da `main` for aplicada (AD-026 do repositório pai), os jobs `build`, `test` e `quality` serão os status checks obrigatórios.
+
+## 9. Cobertura
+
+O limite mínimo é de **80%** de cobertura de linhas. No CI (`.github/workflows/ci-cd.yml`) o job `test` roda os testes da solution (`AutoReparos.Cadastros.slnx`: Domain, Application e IntegrationTests) com `XPlat Code Coverage` (formatos Cobertura e OpenCover) e o script `.github/scripts/verificar_cobertura.py` une os relatórios `coverage.cobertura.xml` e falha se o total ficar abaixo de `MINIMO_COBERTURA` (80). O job `quality` envia os relatórios OpenCover ao SonarCloud e espera o quality gate (migrações e `bin`/`obj` ficam fora da análise).
+
+Relatório do SonarCloud: https://sonarcloud.io/project/overview?id=Grupo78-PosTech-15SOAT_AutoReparos.Cadastros
