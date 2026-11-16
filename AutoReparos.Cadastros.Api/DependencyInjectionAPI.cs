@@ -47,7 +47,7 @@ namespace AutoReparos.Cadastros.Api
                 x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
             .AddJwtBearer()
-            .AddScheme<AuthenticationSchemeOptions, ChaveInternaAuthenticationHandler>(ChaveInternaAuthenticationHandler.Scheme, null);
+            .AddScheme<AuthenticationSchemeOptions, ChaveInternaAuthenticationHandler>(ChaveInternaAuthenticationHandler.Esquema, null);
 
             // Valida os tokens do próprio Cadastros pela chave pública (sem segredo compartilhado)
             services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
@@ -78,12 +78,12 @@ namespace AutoReparos.Cadastros.Api
 
                 // Consulta de cliente e veículo: usuário autenticado (JWT repassado pelo OS) ou, sem usuário, a chave interna
                 options.AddPolicy("ConsultaCadastro", policy => policy
-                    .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme, ChaveInternaAuthenticationHandler.Scheme)
+                    .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme, ChaveInternaAuthenticationHandler.Esquema)
                     .RequireRole("Administrador", "Atendente", "Mecanico", ChaveInternaAuthenticationHandler.RoleServicoInterno));
 
                 // Rotas /internal: somente com X-Chave-Interna válido
                 options.AddPolicy("ChaveInterna", policy => policy
-                    .AddAuthenticationSchemes(ChaveInternaAuthenticationHandler.Scheme)
+                    .AddAuthenticationSchemes(ChaveInternaAuthenticationHandler.Esquema)
                     .RequireRole(ChaveInternaAuthenticationHandler.RoleServicoInterno));
             });
 

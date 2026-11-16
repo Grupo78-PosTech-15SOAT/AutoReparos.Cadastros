@@ -93,4 +93,4 @@ app.MapVeiculosEndpoints();
 
 app.MapHealthChecks("/health");
 
-app.Run();
+await app.RunAsync();

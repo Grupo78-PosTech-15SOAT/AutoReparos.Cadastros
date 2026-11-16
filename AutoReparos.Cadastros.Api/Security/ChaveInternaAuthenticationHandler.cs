@@ -18,7 +18,7 @@ public class ChaveInternaAuthenticationHandler(
     IOptions<InternoSettings> interno)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
-    public const string Scheme = "ChaveInterna";
+    public const string Esquema = "ChaveInterna";
     public const string Cabecalho = "X-Chave-Interna";
     public const string RoleServicoInterno = "ServicoInterno";
 
@@ -31,8 +31,8 @@ public class ChaveInternaAuthenticationHandler(
         if (string.IsNullOrEmpty(esperada) || !ChavesIguais(enviada.ToString(), esperada))
             return Task.FromResult(AuthenticateResult.Fail("Chave interna inválida."));
 
-        var identity = new ClaimsIdentity([new Claim(ClaimTypes.Role, RoleServicoInterno)], Scheme);
-        return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), Scheme)));
+        var identity = new ClaimsIdentity([new Claim(ClaimTypes.Role, RoleServicoInterno)], Esquema);
+        return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), Esquema)));
     }
 
     private static bool ChavesIguais(string a, string b)

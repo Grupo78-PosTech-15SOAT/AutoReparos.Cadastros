@@ -47,7 +47,7 @@ namespace AutoReparos.Cadastros.Infrastructure.Data
                 if (environment.IsDevelopment() || environment.IsEnvironment("Testing") || environment.IsStaging())
                 {
                     var clientes = await SeedClientesAsync(clienteRepository, logger);
-                    var veiculos = await SeedVeiculosAsync(veiculoRepository, clientes, logger);
+                    await SeedVeiculosAsync(veiculoRepository, clientes, logger);
                 }
             }
             catch (Exception ex)
@@ -109,7 +109,7 @@ namespace AutoReparos.Cadastros.Infrastructure.Data
             return clientes;
         }
 
-        private static async Task<List<Veiculo>> SeedVeiculosAsync(
+        private static async Task SeedVeiculosAsync(
             IVeiculoRepository veiculoRepository,
             List<Cliente> clientes,
             ILogger logger)
@@ -118,8 +118,7 @@ namespace AutoReparos.Cadastros.Infrastructure.Data
             if (total > 0)
             {
                 logger.LogInformation("Veículos já existem, pulando seed.");
-                var (existentes, _) = await veiculoRepository.GetAll(null, 0, 3);
-                return existentes.ToList();
+                return;
             }
 
             logger.LogInformation("Criando veículos de desenvolvimento...");
@@ -146,7 +145,6 @@ namespace AutoReparos.Cadastros.Infrastructure.Data
                 await veiculoRepository.Create(veiculo);
 
             logger.LogInformation("{Count} veículos criados.", veiculos.Count);
-            return veiculos;
         }
     }
 }
