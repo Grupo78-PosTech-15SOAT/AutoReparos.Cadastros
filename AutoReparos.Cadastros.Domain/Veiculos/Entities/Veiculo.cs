@@ -1,6 +1,7 @@
 ﻿using AutoReparos.Cadastros.Domain.Shared;
 using AutoReparos.Cadastros.Domain.Veiculos.Exceptions;
 using AutoReparos.Cadastros.Domain.Veiculos.ValueObjects;
+using System.Diagnostics.CodeAnalysis;
 
 namespace AutoReparos.Cadastros.Domain.Veiculos.Entities
 {
@@ -26,6 +27,8 @@ namespace AutoReparos.Cadastros.Domain.Veiculos.Entities
         /// </summary>
         protected Veiculo() { }
 
+        [SuppressMessage("Major Code Smell", "S107:Methods should not have too many parameters",
+            Justification = "Os oito valores são as invariantes obrigatórias do veículo; um objeto de parâmetros só deslocaria a validação.")]
         public Veiculo(
             Guid clienteId,
             string marca,
@@ -36,7 +39,11 @@ namespace AutoReparos.Cadastros.Domain.Veiculos.Entities
             Chassi chassi,
             Renavam renavam)
         {
-            Validar(clienteId, marca, modelo, anoFabricacao, anoModelo, placa, chassi, renavam);
+            if (clienteId == Guid.Empty)
+                throw new InvalidVeiculoException("Cliente é obrigatório");
+
+            ValidarAtualizacao(marca, modelo, anoFabricacao, anoModelo);
+            ValidarIdentificacao(placa, chassi, renavam);
 
             ClienteId = clienteId;
             Marca = marca;
@@ -66,21 +73,11 @@ namespace AutoReparos.Cadastros.Domain.Veiculos.Entities
             AtualizadoEm = DateTime.UtcNow;
         }
 
-        private static void Validar(
-        Guid clienteId,
-        string marca,
-        string modelo,
-        int anoFabricacao,
-        int anoModelo,
-        Placa placa,
-        Chassi chassi,
-        Renavam renavam)
+        private static void ValidarIdentificacao(
+            Placa placa,
+            Chassi chassi,
+            Renavam renavam)
         {
-            if (clienteId == Guid.Empty)
-                throw new InvalidVeiculoException("Cliente é obrigatório");
-
-            ValidarAtualizacao(marca, modelo, anoFabricacao, anoModelo);
-
             if (placa is null)
                 throw new InvalidVeiculoException("Placa é obrigatória");
 

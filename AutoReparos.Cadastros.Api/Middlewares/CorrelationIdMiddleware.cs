@@ -84,17 +84,7 @@ namespace AutoReparos.Cadastros.Api.Middlewares
             return trimmed;
         }
 
-        private static bool IsValidCorrelationId(string correlationId)
-        {
-            foreach (var c in correlationId)
-            {
-                if (!char.IsLetterOrDigit(c) && c != '-' && c != '_' && c != '.' && c != ':')
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
+        private static bool IsValidCorrelationId(string correlationId) =>
+            correlationId.All(c => char.IsLetterOrDigit(c) || c is '-' or '_' or '.' or ':');
     }
 }
