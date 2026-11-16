@@ -45,10 +45,8 @@ namespace AutoReparos.Cadastros.Api
                             options.RecordException = true;
                         })
                         .AddHttpClientInstrumentation()
-                        .AddEntityFrameworkCoreInstrumentation(options =>
-                        {
-                            options.SetDbStatementForText = true;
-                        })
+                        // Desde a 1.12 o texto da query (db.query.text) entra no span por padrão, já sanitizado.
+                        .AddEntityFrameworkCoreInstrumentation()
                         .AddOtlpExporter(configureOtlp);
                 })
                 .WithMetrics(metrics =>
