@@ -1,0 +1,88 @@
+# C20 de infra-ci-observabilidade (D-67): a fila autoreparos-cadastros-notificacoes assina o tópico da Execução com raw delivery,
+# filtro por `tipo` e política de fila que só aceita o SNS vindo desse tópico.
+
+mock_provider "aws" {
+  mock_data "aws_caller_identity" {
+    defaults = {
+      account_id = "198903849859"
+    }
+  }
+}
+
+override_data {
+  target = data.aws_ssm_parameter.oidc_provider_arn
+  values = {
+    insecure_value = "arn:aws:iam::198903849859:oidc-provider/oidc.eks.us-east-1.amazonaws.com/id/EXEMPLO"
+  }
+}
+
+override_data {
+  target = data.aws_ssm_parameter.oidc_provider_url
+  values = {
+    insecure_value = "oidc.eks.us-east-1.amazonaws.com/id/EXEMPLO"
+  }
+}
+
+override_data {
+  target = data.aws_ssm_parameter.database_address
+  values = {
+    insecure_value = "autoreparos-db.exemplo.us-east-1.rds.amazonaws.com"
+  }
+}
+
+
+override_data {
+  target = data.aws_ssm_parameter.database_name
+  values = {
+    insecure_value = "autoreparos_db"
+  }
+}
+
+override_data {
+  target = data.aws_ssm_parameter.subnets_privadas
+  values = {
+    insecure_value = "subnet-a,subnet-b"
+  }
+}
+
+override_data {
+  target = data.aws_subnet.privadas
+  values = {
+    cidr_block = "10.0.1.0/24"
+  }
+}
+run "assinatura_do_topico_da_execucao" {
+  command = apply
+
+  assert {
+    condition = (
+      aws_sns_topic_subscription.notificacoes_eventos_execucao.topic_arn == "arn:aws:sns:us-east-1:198903849859:autoreparos-execucao-eventos" &&
+      aws_sns_topic_subscription.notificacoes_eventos_execucao.protocol == "sqs" &&
+      aws_sns_topic_subscription.notificacoes_eventos_execucao.endpoint == aws_sqs_queue.notificacoes.arn
+    )
+    error_message = "A fila autoreparos-cadastros-notificacoes precisa assinar o tópico autoreparos-execucao-eventos pelo protocolo sqs."
+  }
+
+  assert {
+    condition     = aws_sns_topic_subscription.notificacoes_eventos_execucao.raw_message_delivery == true
+    error_message = "A assinatura precisa de raw delivery: os consumidores leem o envelope publicado sem o invólucro do SNS."
+  }
+
+  assert {
+    condition = (
+      aws_sns_topic_subscription.notificacoes_eventos_execucao.filter_policy_scope == "MessageAttributes" &&
+      jsondecode(aws_sns_topic_subscription.notificacoes_eventos_execucao.filter_policy) == { tipo = ["execucao.concluida.v1"] }
+    )
+    error_message = "O filtro da assinatura precisa ser exatamente os tipos que a fila consome, pelo atributo tipo."
+  }
+
+  assert {
+    condition = (
+      jsondecode(aws_sqs_queue_policy.notificacoes_recebe_do_topico_execucao.policy).Statement[0].Principal.Service == "sns.amazonaws.com" &&
+      jsondecode(aws_sqs_queue_policy.notificacoes_recebe_do_topico_execucao.policy).Statement[0].Action == "sqs:SendMessage" &&
+      jsondecode(aws_sqs_queue_policy.notificacoes_recebe_do_topico_execucao.policy).Statement[0].Condition.ArnEquals["aws:SourceArn"] == "arn:aws:sns:us-east-1:198903849859:autoreparos-execucao-eventos" &&
+      length(jsondecode(aws_sqs_queue_policy.notificacoes_recebe_do_topico_execucao.policy).Statement) == 1
+    )
+    error_message = "A política da fila só pode aceitar sqs:SendMessage do SNS vindo do tópico da Execução."
+  }
+}
