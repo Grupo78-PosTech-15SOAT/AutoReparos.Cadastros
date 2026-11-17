@@ -48,7 +48,7 @@ AutoReparos.Cadastros/
 
 ### Papel, banco e mensageria
 
-O Cadastros é o dono de clientes, veículos e usuários (Identity), emite o JWT (RS256) e publica o JWKS; OS, Cobrança e Execução só validam o token. O banco é PostgreSQL próprio (`cadastros_db`), sem leitura cruzada: os demais serviços consultam por REST (por exemplo `GET /api/clientes/{id}`) e o login de cliente por CPF chega pela rota interna `POST /internal/clientes/autenticar`. Não participa da Saga: apenas consome, em fila SQS própria assinante dos tópicos SNS, os eventos que geram e-mail ao cliente (seção 3.2), com DLQ própria, e não publica eventos.
+O Cadastros é o dono de clientes, veículos e usuários (Identity), emite o JWT (RS256) e publica o JWKS; OS, Cobrança e Execução só validam o token. O banco é PostgreSQL próprio (`cadastros_db`), sem leitura cruzada: os demais serviços consultam por REST (por exemplo `GET /api/clientes/{id}`) e o login de cliente por CPF chega pela rota interna `POST /internal/clientes/autenticar`. Não participa da Saga: apenas consome, em fila SQS própria (assinante do tópico SNS da Execução e alimentada pelo OS), os eventos que geram e-mail ao cliente (seção 3.2), com DLQ própria, e não publica eventos.
 
 ---
 
@@ -98,7 +98,7 @@ Gerar uma chave para desenvolvimento: `openssl genrsa 2048 | openssl pkcs8 -topk
 
 ## 3.2 Notificações por evento
 
-O Cadastros é dono do e-mail do cliente e consome a **sua própria fila SQS**, assinante dos tópicos SNS de orçamento, conclusão, pagamento e lembrete. Tipos que notificam: `orcamento.gerado.v1`, `orcamento.aprovado.v1`, `orcamento.recusado.v1`, `execucao.concluida.v1`, `pagamento.aprovado.v1`, `pagamento.recusado.v1` e `saga.lembrete.v1`; qualquer outro tipo é descartado sem e-mail.
+O Cadastros é dono do e-mail do cliente e consome a **sua própria fila SQS** (`autoreparos-cadastros-notificacoes`). Chegam nela o `saga.lembrete.v1`, enviado direto pelo OS, e o `execucao.concluida.v1`, entregue pelo tópico SNS `autoreparos-execucao-eventos` da Execução: a fila assina o tópico com raw delivery e filtro pelo atributo `tipo` (D-67, `infra/terraform/assinatura-execucao.tf`). Os demais tipos abaixo são aceitos pelo consumidor, mas nenhum serviço os publica para esta fila hoje. Tipos que notificam: `orcamento.gerado.v1`, `orcamento.aprovado.v1`, `orcamento.recusado.v1`, `execucao.concluida.v1`, `pagamento.aprovado.v1`, `pagamento.recusado.v1` e `saga.lembrete.v1`; qualquer outro tipo é descartado sem e-mail.
 
 - **Contrato lido:** envelope com `eventId`, `tipo` e `clienteId` (no topo ou em `payload`; `ordemServicoId` ou `correlacaoId` identificam a OS). O invólucro de notificação do SNS também é aceito. **Os produtores precisam incluir `clienteId` no evento**, porque é por ele que o Cadastros descobre o e-mail.
 - **Uma vez por `eventId`:** o `eventId` é gravado em `NotificacoesEnviadas` somente depois que o e-mail sai; entregas repetidas da mesma mensagem não geram novo e-mail.

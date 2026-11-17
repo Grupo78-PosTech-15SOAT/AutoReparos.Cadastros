@@ -39,6 +39,7 @@ namespace AutoReparos.Cadastros.Api
                     tracing
                         .SetResourceBuilder(resourceBuilder)
                         .AddSource(serviceName)
+                        .AddSource("AutoReparos.Cadastros.Mensageria")
                         .AddSource("Npgsql")
                         .AddAspNetCoreInstrumentation(options =>
                         {
